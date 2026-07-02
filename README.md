@@ -1,8 +1,20 @@
-# Beauty Product Intelligence App
+# Cosmetic Strategy Studio
 
-A complete end-to-end machine learning project built for the subject **Modelling in Advanced Data Analytics (MADA)**.
+An end-to-end machine learning project built for the subject **Modelling in Advanced Data Analytics (MADA)**.
 
-The app helps cosmetics brand managers and product developers evaluate a new product configuration by predicting its likely price point and probability of receiving a high consumer rating.
+The app helps cosmetics brand managers evaluate new product configurations — predicting price point, probability of a high rating, and building optimised product portfolios across a budget.
+
+---
+
+## Live App
+
+| Resource | URL |
+|----------|-----|
+| Live App | https://cosmetic-strategy-studio.vercel.app |
+| Backend API | https://cosmetic-strategy-studio.onrender.com |
+| API Docs | https://cosmetic-strategy-studio.onrender.com/docs |
+
+> **Note**: The backend runs on Render's free tier and may take 30–60 seconds to wake from cold start on first prediction request. Static data (model leaderboard, commercial insights) loads instantly from Vercel's CDN.
 
 ---
 
@@ -18,14 +30,26 @@ The app helps cosmetics brand managers and product developers evaluate a new pro
 
 ## Modelling Questions
 
-1. **Classification** — Can we predict whether a product will be highly rated?  
-   - Target: `High_Rating = 1` if `Rating ≥ 4.0`, else `0`  
-   - **No Rating is used as input** (would be data leakage)
+1. **Classification** — Can we predict whether a product will be highly rated?
+   - Target: `High_Rating = 1` if `Rating ≥ 4.0`, else `0`
+   - No Rating is used as input (would be data leakage)
 
-2. **Regression** — Can we predict the retail price (Price_USD)?  
-   - Target: `Price_USD`  
-   - Main model: no Rating feature (realistic for a new product)  
-   - Alternative model: with Rating (labelled clearly, benchmarking only)
+2. **Regression** — Can we predict the retail price (Price_USD)?
+   - Target: `Price_USD`
+   - Main model: no Rating feature (realistic for a new product)
+
+---
+
+## App Features
+
+| Tab | What it does |
+|-----|--------------|
+| Welcome | Dataset overview, key stats |
+| Product Success Predictor | Predicts high-rating probability for a custom product config |
+| Price Predictor | Predicts expected retail price |
+| Commercial Insights | Category benchmarks, feature importances, price segments |
+| Portfolio Optimizer | Bayesian-scored portfolio builder across a budget |
+| Model Performance | Leaderboard, feature drivers, honest limitations |
 
 ---
 
@@ -44,19 +68,23 @@ src/ (offline training)
     ▼
 models/ (joblib + JSON artefacts)
     │
+    ├──► frontend/public/data/          ← static JSON, served by Vercel CDN
+    │      leaderboard.json
+    │      metadata.json
+    │      data_summary.json
+    │
     ▼
-backend/main.py (FastAPI)
+backend/main.py (FastAPI on Render)
   GET  /health
-  GET  /metadata
-  GET  /data/summary
-  GET  /models/leaderboard
   POST /predict/rating
   POST /predict/price
   POST /predict/both
+  GET  /recommend/options
+  POST /recommend/portfolio
     │
     ▼
-frontend/ (React + Vite)
-  Product form → API call → Prediction cards + charts
+frontend/ (React + Vite on Vercel)
+  6 tabs — static data from CDN, predictions from Render
 ```
 
 ---
@@ -85,12 +113,11 @@ npm install
 
 ---
 
-## Running
+## Running Locally
 
 ### 1. Train models
 
 ```bash
-# From repo root
 python src/train_classification.py
 python src/train_regression.py
 ```
@@ -103,8 +130,7 @@ Outputs saved to `models/`.
 uvicorn backend.main:app --reload
 ```
 
-API available at: `http://localhost:8000`  
-Interactive docs: `http://localhost:8000/docs`
+API available at `http://localhost:8000` — interactive docs at `http://localhost:8000/docs`.
 
 ### 3. Run frontend
 
@@ -113,7 +139,7 @@ cd frontend
 npm run dev
 ```
 
-App available at: `http://localhost:5173`
+App available at `http://localhost:5173`. The frontend proxies `/api/*` to `http://localhost:8000` in dev mode via `vite.config.js`.
 
 ### 4. Build frontend for production
 
@@ -124,46 +150,48 @@ npm run build
 
 ---
 
-## Render Reports
+## Render the Analysis Report
+
+The Quarto document runs end-to-end from a clean checkout and produces the full Phase-2 HTML analysis.
+
+### Prerequisites
+
+```bash
+# Install Python dependencies (if not already done)
+pip install -r requirements.txt
+
+# Install Quarto: https://quarto.org/docs/get-started/
+# On macOS:
+brew install quarto
+```
+
+### Render
 
 ```bash
 quarto render reports/analysis.qmd
-quarto render reports/slides.qmd
 ```
+
+Output: `reports/analysis.html` — open in any browser.
 
 ---
 
 ## Deployment
 
-### Frontend → Vercel or Netlify
+### Frontend → Vercel
 
 1. Push repo to GitHub.
-2. Connect on [vercel.com](https://vercel.com) or [netlify.com](https://netlify.com).
+2. Connect on [vercel.com](https://vercel.com).
 3. Set **Root Directory** to `frontend/`.
-4. Set environment variable: `VITE_API_URL=https://your-backend-url.onrender.com`
-5. Build command: `npm run build`, publish directory: `dist`.
+4. Build command: `npm run build`, publish directory: `dist`.
+5. No environment variables needed — the production backend URL is baked in at build time.
 
 ### Backend → Render
 
 1. Create a new **Web Service** on [render.com](https://render.com).
-2. Connect your GitHub repo.
-3. Set Start Command: `uvicorn backend.main:app --host 0.0.0.0 --port 8000`
-4. Ensure `models/*.joblib` and `models/*.json` are committed.
-
-### Backend → Hugging Face Spaces (alternative)
-
-Use the `gradio` or `docker` runtime with the same `uvicorn` start command.
-
----
-
-## Live Links (fill in after deployment)
-
-| Resource | URL |
-|----------|-----|
-| Live App | _TBD_ |
-| Backend API | _TBD_ |
-| Analysis Report | _TBD_ |
-| Slides | _TBD_ |
+2. Connect your GitHub repo, set root to `/`.
+3. Build command: `pip install -r requirements.txt`
+4. Start command: `uvicorn backend.main:app --host 0.0.0.0 --port 8000`
+5. Ensure `models/*.joblib` and `models/*.json` are committed to the repo.
 
 ---
 
@@ -174,17 +202,9 @@ beauty-cosmetics-ml-app/
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
-├── .env.example
 ├── data/
-│   ├── raw/   ← dataset CSV
+│   ├── raw/                        ← dataset CSV
 │   └── processed/
-├── notebooks/
-│   └── optional_exploration.ipynb
-├── reports/
-│   ├── analysis.qmd
-│   ├── executive_summary.md
-│   ├── ai_workflow_reflection.md
-│   └── slides.qmd
 ├── src/
 │   ├── config.py
 │   ├── data.py
@@ -194,53 +214,44 @@ beauty-cosmetics-ml-app/
 │   ├── evaluate.py
 │   ├── explain.py
 │   └── utils.py
-├── models/            ← saved pipelines + JSON metadata
+├── models/                         ← saved pipelines + JSON metadata
 ├── backend/
-│   ├── main.py
-│   ├── schemas.py
-│   └── README.md
-└── frontend/
-    ├── package.json
-    ├── vite.config.js
-    ├── index.html
-    └── src/
-        ├── App.jsx
-        ├── api.js
-        ├── styles.css
-        └── components/
-            ├── ProductForm.jsx
-            ├── PredictionCards.jsx
-            ├── DashboardCharts.jsx
-            ├── LeaderboardTable.jsx
-            └── RecommendationBox.jsx
+│   └── main.py                     ← FastAPI app
+├── frontend/
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── index.html
+│   ├── public/
+│   │   └── data/                   ← static JSON served by Vercel CDN
+│   │       ├── leaderboard.json
+│   │       ├── metadata.json
+│   │       └── data_summary.json
+│   └── src/
+│       ├── App.jsx
+│       ├── api.js
+│       ├── styles.css
+│       ├── featureLabels.js
+│       ├── categoryImages.jsx
+│       └── components/
+│           ├── Tabs.jsx
+│           ├── WelcomeTab.jsx
+│           ├── ProductSuccessTab.jsx
+│           ├── PricePredictorTab.jsx
+│           ├── CommercialInsightsTab.jsx
+│           ├── PortfolioOptimizerTab.jsx
+│           ├── ModelPerformanceTab.jsx
+│           ├── LeaderboardTable.jsx
+│           ├── ChartCard.jsx
+│           ├── ProductForm.jsx
+│           ├── PredictionCards.jsx
+│           ├── ProductConceptPreview.jsx
+│           └── SavedProductsBar.jsx
+└── reports/
+    ├── analysis.qmd                ← Quarto source
+    ├── analysis.html               ← rendered output
+    ├── executive_summary.md
+    └── ai_workflow_reflection.md
 ```
-
----
-
-## Visual Assets
-
-The frontend uses **inline SVG-based product illustrations** — no external image files are required and the app works fully offline.
-
-### Category images
-
-Each product category (Serum, Moisturizer, Lipstick, etc.) maps to a unique inline SVG product silhouette defined in `frontend/src/categoryImages.js`. These are abstract product illustrations in a warm, cosmetics-appropriate color palette.
-
-- Images are **not real product photos** and do not represent any brand.
-- The dataset does not include product image URLs — these are synthetic placeholder visuals.
-- To replace with licensed product images, add files to `frontend/public/images/categories/{category-slug}.png` and update the `getCategoryImage()` function in `categoryImages.js`.
-
-### Concept image upload
-
-The Product Success Predictor and Price Predictor tabs allow users to upload a product concept mockup image:
-
-- The image is displayed next to the prediction result as a visual context aid.
-- **The image is not sent to the backend and is not used by the ML model.**
-- It is stored only in the browser's memory for the duration of the session.
-- The app clearly labels this image as visual context only.
-
-### If images are missing
-
-If category image files are not found at `/images/categories/`, the app falls back to the inline SVG illustrations. The app will not crash if image files are absent.
 
 ---
 
@@ -252,4 +263,4 @@ All scripts use `random_state=42`. Running `train_classification.py` then `train
 
 ## AI Workflow Note
 
-This project was built with Claude Code (claude-sonnet-4-6) as a senior ML engineering assistant. See `reports/ai_workflow_reflection.md` for details on how the AI was used, what was verified manually, and what was changed.
+This project was built with Claude Code (claude-sonnet-4-6) as a senior ML engineering assistant. See `reports/ai_workflow_reflection.md` for details on how the AI was used, what was verified manually, and the rough cost/effort breakdown.
