@@ -468,8 +468,7 @@ export default function PortfolioOptimizerTab() {
                               title={`Select ${alt.product_name}`}
                             >
                               <div className="portfolio-alt-info">
-                                <div className="portfolio-alt-name">{alt.product_name}</div>
-                                <div className="portfolio-alt-brand">{alt.brand}</div>
+                                <div className="portfolio-alt-name">{alt.brand}</div>
                               </div>
                               <div className="portfolio-alt-stats">
                                 <span style={{
