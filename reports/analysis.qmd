@@ -34,12 +34,13 @@ plt.rcParams.update({"figure.dpi": 120, "axes.spines.top": False, "axes.spines.r
 
 # 1. Project Overview
 
-This report covers the end-to-end analysis for the Beauty Product Intelligence App — a school project for the subject *Modelling in Advanced Data Analytics*. The goal is to build two ML models:
+This report covers the end-to-end analysis for the **Cosmetic Strategy Studio** — a school project for the subject *Modelling in Advanced Data Analytics*. The project delivers:
 
-1. **Classification**: predict whether a cosmetics product will be *highly rated* (Rating ≥ 4.0)
-2. **Regression**: predict the *retail price* (Price_USD) of a product
+1. **Two supervised ML models** — a classification model that predicts whether a cosmetics product will be *highly rated* (Rating ≥ 4.0), and a regression model that predicts the *retail price* (Price_USD) of a product.
+2. **A Portfolio Optimizer** — an algorithmic, strategy-driven recommendation engine that selects one benchmark product per category from the dataset given a total budget and a positioning strategy.
+3. **A deployed web application** (React + FastAPI) that exposes all three tools to brand managers and product strategists.
 
-Both models power a web application that helps brand managers evaluate new product configurations.
+The ML models power the **Product Success Predictor** and **Price Predictor** tabs. The Portfolio Optimizer is a separate analytical engine built on Bayesian-adjusted ratings and greedy budget allocation — it is not a trained ML model, but a decision-support algorithm that operates directly on the dataset.
 
 ---
 
@@ -84,6 +85,7 @@ print(f"Product_Size_ml range: {df['Product_Size_ml'].min():.0f}–{df['Product_
 ```
 
 Cleaning steps:
+
 - Normalised Cruelty_Free to title-case strings ("True"/"False")
 - Stripped whitespace from string columns
 - Converted Price_USD, Rating, Number_of_Reviews to numeric
@@ -102,7 +104,6 @@ Cleaning steps:
 #| fig-cap: "High_Rating class distribution. Only 27.1% of products are classified as high-rated (Rating ≥ 4.0). The dataset is moderately imbalanced."
 fig, axes = plt.subplots(1, 2, figsize=(10, 4))
 
-# Rating distribution
 axes[0].hist(df["Rating"], bins=20, color="#c0556a", edgecolor="white", alpha=0.85)
 axes[0].axvline(4.0, color="#6b3fa0", linestyle="--", linewidth=1.5, label="Threshold (4.0)")
 axes[0].set_xlabel("Rating")
@@ -110,7 +111,6 @@ axes[0].set_ylabel("Count")
 axes[0].set_title("Rating Distribution")
 axes[0].legend()
 
-# Class distribution
 counts = df["High_Rating"].value_counts()
 axes[1].bar(["Not High-Rated\n(0)", "High-Rated\n(1)"], counts.values,
             color=["#e0c4d0", "#c0556a"], edgecolor="white")
@@ -123,13 +123,13 @@ plt.tight_layout()
 plt.show()
 ```
 
-Rating is uniformly distributed across 1–5 with a small step pattern. This is a sign of synthetic generation — real consumer ratings tend to be right-skewed (J-distribution). With the 4.0 threshold, 27.1% of products are "high-rated" and 72.9% are not. This moderate class imbalance means the model must not simply predict "not high-rated" for everything.
+Rating is uniformly distributed across 1–5 with a small step pattern — a sign of synthetic generation. Real consumer ratings tend to be J-shaped (most reviews are 1 or 5). With a 4.0 threshold, 27.1% of products are "high-rated" and 72.9% are not. This moderate class imbalance means a naïve classifier would achieve ~72.9% accuracy simply by predicting the majority class.
 
 ### Price_USD (Regression Target)
 
 ```{python}
 #| label: fig-price-dist
-#| fig-cap: "Price distribution is nearly uniform between $10 and $150 — again a sign of synthetic data. Real cosmetics markets show strong right skew with many budget products and few ultra-premium items."
+#| fig-cap: "Price distribution is nearly uniform between $10 and $150 — a clear sign of synthetic data. Real cosmetics markets show strong right skew with many budget products and few ultra-premium items."
 fig, ax = plt.subplots(figsize=(8, 4))
 ax.hist(df["Price_USD"], bins=40, color="#6b3fa0", edgecolor="white", alpha=0.85)
 ax.set_xlabel("Price (USD)")
@@ -147,7 +147,7 @@ plt.show()
 
 ```{python}
 #| label: fig-corr
-#| fig-cap: "Correlation heatmap for numeric columns. All pairwise correlations are essentially zero — this is highly unusual and confirms the synthetic nature of the data."
+#| fig-cap: "Correlation heatmap for numeric columns. All pairwise correlations are essentially zero — highly unusual and confirming the synthetic nature of the data."
 corr = df[["Price_USD", "Rating", "Number_of_Reviews", "Product_Size_ml", "Review_Count_Log"]].corr()
 fig, ax = plt.subplots(figsize=(6, 5))
 sns.heatmap(corr, annot=True, fmt=".3f", cmap="RdPu", center=0,
@@ -157,12 +157,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-**Key finding**: all correlations are within ±0.01. In a real cosmetics dataset, we would expect:
-- Price to correlate positively with brand tier (luxury brands charge more)
-- Review count to correlate negatively with price (budget products have more reviews)
-- Rating to weakly correlate with ingredient quality
-
-The absence of any signal strongly suggests this dataset was generated by randomly sampling from uniform distributions independently for each column.
+**Key finding**: all correlations are within ±0.01. In a real cosmetics dataset we would expect price to correlate positively with brand tier, and review count to correlate negatively with price. The absence of any numeric signal strongly suggests this dataset was generated by independently sampling each column from a uniform distribution.
 
 ## 3.3 Price by Category
 
@@ -172,7 +167,8 @@ The absence of any signal strongly suggests this dataset was generated by random
 cat_avg = df.groupby("Category")["Price_USD"].mean().sort_values(ascending=False)
 fig, ax = plt.subplots(figsize=(10, 4))
 ax.barh(cat_avg.index, cat_avg.values, color="#c0556a", alpha=0.85)
-ax.axvline(df["Price_USD"].mean(), color="#6b3fa0", linestyle="--", linewidth=1.5, label=f"Overall mean ${df['Price_USD'].mean():.0f}")
+ax.axvline(df["Price_USD"].mean(), color="#6b3fa0", linestyle="--", linewidth=1.5,
+           label=f"Overall mean ${df['Price_USD'].mean():.0f}")
 ax.set_xlabel("Average Price (USD)")
 ax.set_title("Average Price by Category")
 ax.legend()
@@ -185,7 +181,8 @@ plt.show()
 ```{python}
 #| label: fig-cruelty
 fig, ax = plt.subplots(figsize=(6, 4))
-df.groupby("Cruelty_Free")["Rating"].mean().plot(kind="bar", ax=ax, color=["#e0c4d0","#c0556a"], rot=0)
+df.groupby("Cruelty_Free")["Rating"].mean().plot(kind="bar", ax=ax,
+    color=["#e0c4d0","#c0556a"], rot=0)
 ax.set_title("Average Rating by Cruelty-Free Status")
 ax.set_ylabel("Mean Rating")
 ax.set_xlabel("")
@@ -210,7 +207,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-The scatter plot confirms there is no relationship between review count and rating (r ≈ 0). In real data, we would expect popular products with many reviews to cluster around average ratings (regression to the mean effect).
+The scatter plot confirms there is no relationship between review count and rating (r ≈ 0). In real data, popular products with many reviews would cluster around average ratings (regression-to-the-mean effect).
 
 ---
 
@@ -225,11 +222,12 @@ print(df[new_cols].describe())
 ```
 
 Features engineered:
-- **Product_Size_ml**: parsed from strings like "30ml", "250ml". Range: 10–500 ml.
+
+- **Product_Size_ml**: parsed from strings like "30ml", "250ml" using regex. Range: 10–500 ml.
 - **Review_Count_Log** = log1p(Number_of_Reviews): log-transform to reduce right skew.
-- **High_Rating**: binary target (Rating ≥ 4.0).
-- **Price_Segment**: Budget / Mid-range / Premium (for dashboard display only, not a model feature — would be derived from the target).
-- **Value_Score** = Rating / Price_USD: for app insights only, not used in models.
+- **High_Rating**: binary classification target (Rating ≥ 4.0).
+- **Price_Segment**: Budget / Mid-range / Premium — for app display only, not used as a model feature (it would be derived from the regression target and therefore leak).
+- **Value_Score** = Rating / Price_USD: used for dashboard insights only, not in models.
 
 ```{python}
 #| label: fig-size-price
@@ -256,7 +254,6 @@ from sklearn.feature_selection import mutual_info_classif
 from sklearn.preprocessing import LabelEncoder
 from src.config import CLASSIFICATION_FEATURES
 
-# Encode categoricals for MI estimation
 df_enc = df[CLASSIFICATION_FEATURES].copy()
 for col in df_enc.select_dtypes(include="object").columns:
     df_enc[col] = LabelEncoder().fit_transform(df_enc[col].astype(str))
@@ -268,9 +265,7 @@ print("Mutual information with High_Rating:")
 print(mi_df.round(4))
 ```
 
-Mutual information scores are near zero for all features. This is consistent with the correlation analysis — the features carry essentially no information about the target. This finding is documented in the limitations section.
-
-**Method choice**: Mutual information was used because it is model-agnostic, works with both numeric and (label-encoded) categorical variables, and makes no linearity assumptions. It is fitted only on training-equivalent data (all features, not the test set), so it is leakage-safe.
+Mutual information scores are near zero for all features — consistent with the correlation analysis. The features carry essentially no information about the target. **Method choice**: mutual information was used because it is model-agnostic, handles both numeric and categorical (label-encoded) variables, and makes no linearity assumptions. It is evaluated on all features simultaneously, not the test set, so it is leakage-safe.
 
 ---
 
@@ -295,6 +290,8 @@ X_train, X_val, y_train, y_val = train_test_split(
 print(f"Train: {len(X_train)} | Val: {len(X_val)} | Test (held-out): {len(X_test)}")
 print(f"Class balance — train: {y_train.mean():.3f}, test: {y_test.mean():.3f}")
 ```
+
+A stratified 70/15/15 split ensures the 27/73 class imbalance is preserved across all three partitions. The test set is held out until final evaluation — no hyperparameters were tuned against it.
 
 ## 6.2 Model Leaderboard
 
@@ -330,7 +327,7 @@ plt.show()
 
 ```{python}
 #| label: fig-clf-learning-curve
-#| fig-cap: "Learning curve for LogisticRegression. Both train and validation scores are flat near 0.52 regardless of training size — confirming the data contains no learnable signal, not an overfitting issue."
+#| fig-cap: "Learning curve for LogisticRegression. Both train and validation scores are flat near 0.52 regardless of training size — confirming no learnable signal, not an overfitting issue."
 with open("../models/classifier_metadata.json") as f:
     clf_meta = json.load(f)
 
@@ -359,22 +356,21 @@ plt.tight_layout()
 plt.show()
 ```
 
-## 6.3a Class Imbalance and F1 Score
+## 6.4 Class Imbalance and F1 Score
 
-The dataset has a 73/27 class split (not high-rated / high-rated). Without correcting for this, tree-based models and unweighted linear models predict the majority class almost exclusively — resulting in F1 = 0.0 and Recall = 0.0 for the positive class. The model achieves high accuracy (~72.8%) simply by predicting "not high-rated" for every sample.
+The dataset has a 73/27 class split. Without correction, tree-based and unweighted linear models predict the majority class almost exclusively — resulting in F1 = 0.0 and Recall = 0.0 for the positive class despite ~72.8% accuracy.
 
-Setting `class_weight='balanced'` on LogisticRegression instructs it to up-weight the minority class proportionally. This raises the F1 score from 0.0 to **0.365** while keeping ROC-AUC stable (~0.526), confirming the model does distinguish between classes at the probability level — it was simply choosing the wrong decision threshold.
+Setting `class_weight='balanced'` on LogisticRegression instructs it to up-weight the minority class proportionally. This raises F1 from 0.0 to **0.365** while keeping ROC-AUC stable (~0.526), confirming the model distinguishes between classes at the probability level. It was simply using the wrong decision threshold.
 
-**Key takeaway**: accuracy alone is misleading on imbalanced datasets. F1 and ROC-AUC must both be reported. F1 = 0.365 on synthetic data (where no real signal exists) reflects the model learning to threshold its near-random probability scores at the class-prior boundary rather than at 0.5.
+**Key takeaway**: accuracy alone is misleading on imbalanced datasets. F1 and ROC-AUC must both be reported. F1 = 0.365 on synthetic data reflects the model learning to threshold its near-random probability scores at the class-prior boundary rather than 0.5.
 
-## 6.4 Overfitting and Hyperparameter Tuning
+## 6.5 Overfitting and Hyperparameter Tuning
 
-The DecisionTree (unconstrained) shows an overfit gap of ~0.50 (train ROC-AUC ≈ 1.0, test ≈ 0.49), which is textbook overfitting — the tree memorised training data but found no generalisable pattern. Constraining depth to 5 fixes the gap but keeps performance near baseline. RandomForest and XGBoost also overfit heavily, confirming there is no signal to generalise.
+The unconstrained DecisionTree shows an overfit gap of ~0.50 (train ROC-AUC ≈ 1.0, test ≈ 0.49) — the tree memorised training data but found no generalisable pattern. Constraining depth to 5 fixes the gap but keeps performance near baseline. RandomForest and XGBoost also overfit heavily, confirming there is no signal to generalise.
 
 ```{python}
 #| label: xgb-tuning-clf
 #| echo: true
-# Hyperparameter search results for XGBoost (classification)
 import json
 from pathlib import Path
 
@@ -390,7 +386,7 @@ if tuned:
     print(f"Test ROC-AUC: {tuned['test_roc_auc']:.4f}, F1: {tuned['test_f1']:.4f}")
 ```
 
-The tuned XGBoost achieves the highest cross-validated ROC-AUC (0.515) but the improvement over the manual configuration is negligible (~0.003). This is the expected result for synthetic data: no combination of hyperparameters can extract signal that does not exist. The search confirms that the performance ceiling imposed by data quality has been reached.
+The tuned XGBoost achieves the highest cross-validated ROC-AUC (~0.515) but the improvement over the manual configuration is negligible (~0.003). This confirms the performance ceiling is imposed by data quality, not model choice.
 
 ---
 
@@ -414,7 +410,8 @@ reg_df
 #| fig-cap: "Regression leaderboard — all models at R²≈0. Ridge is the best non-baseline model (R²=-0.006). XGBoost with Rating performs similarly, confirming Rating adds no information about Price."
 main = reg_df[reg_df["variant"] != "with_rating"].copy()
 fig, ax = plt.subplots(figsize=(9, 4))
-ax.barh(main["model"], main["test_r2"], color=["#e0c4d0" if "Dummy" in m else "#6b3fa0" for m in main["model"]], alpha=0.85)
+ax.barh(main["model"], main["test_r2"],
+        color=["#e0c4d0" if "Dummy" in m else "#6b3fa0" for m in main["model"]], alpha=0.85)
 ax.axvline(0, color="#c0556a", linestyle="--", linewidth=1.5, label="DummyRegressor (mean)")
 ax.set_xlabel("R² (test)")
 ax.set_title("Regression Model Comparison (no Rating variant)")
@@ -423,7 +420,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-## 7.1a Hyperparameter Tuning for XGBoost (Regression)
+## 7.2 Hyperparameter Tuning for XGBoost (Regression)
 
 ```{python}
 #| label: xgb-tuning-reg
@@ -440,23 +437,19 @@ if tuned_r:
     print(f"Test R²: {tuned_r['test_r2']:.4f}, MAE: {tuned_r['test_mae']:.2f}")
 ```
 
-The tuned XGBoost found a very shallow model (max_depth=3, lr=0.01, 100 trees) as optimal — confirming that complexity adds no value here. The best CV R² is -0.0002, essentially identical to the DummyRegressor (0.0). This outcome is expected: no hyperparameter search can learn relationships that do not exist in the data.
+The tuned XGBoost found a very shallow model (max_depth=3, lr=0.01, 100 trees) — confirming that complexity adds no value. Best CV R² is ≈ −0.0002, essentially identical to the DummyRegressor.
 
-## 7.2 Predicted vs Actual (Ridge)
+## 7.3 Predicted vs Actual (Ridge)
 
 ```{python}
 #| label: fig-pred-vs-actual
-#| fig-cap: "Predicted vs actual price for Ridge. The model predicts a nearly constant value around $80 for all inputs — the spread in predictions is negligible, confirming R²≈0."
+#| fig-cap: "Predicted vs actual price for Ridge. The model predicts a near-constant value around $80 for all inputs — confirming R²≈0."
 from src.utils import load_model
 from src.config import MODELS_DIR, REGRESSION_FEATURES_NO_RATING
+from sklearn.model_selection import train_test_split as tts
 
 reg = load_model(MODELS_DIR / "regressor_best.joblib")
 
-X_test_reg = df.loc[X_test.index, REGRESSION_FEATURES_NO_RATING] if hasattr(X_test, 'index') else df.sample(2250, random_state=42)[REGRESSION_FEATURES_NO_RATING]
-y_test_reg = df.loc[X_test.index, "Price_USD"] if hasattr(X_test, 'index') else df.sample(2250, random_state=42)["Price_USD"]
-
-# Rebuild test split
-from sklearn.model_selection import train_test_split as tts
 Xr = df[REGRESSION_FEATURES_NO_RATING]
 yr = df["Price_USD"]
 _, Xr_test, _, yr_test = tts(Xr, yr, test_size=0.15, random_state=42)
@@ -481,7 +474,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-The predicted vs actual plot shows the Ridge model predicts a narrow band of values around $80 regardless of actual price. Residuals show a clear funnel pattern: the model under-predicts very expensive products and over-predicts very cheap ones — pure regression-to-mean behaviour with no learned relationships.
+The predicted vs actual plot shows Ridge predicts a narrow band around $80 regardless of actual price — pure regression-to-mean behaviour with no learned relationships.
 
 ---
 
@@ -489,7 +482,7 @@ The predicted vs actual plot shows the Ridge model predicts a narrow band of val
 
 ```{python}
 #| label: fig-feature-importance
-#| fig-cap: "Feature importances from the LogisticRegression (classification) via coefficient magnitudes. All importances are near-equal and small — consistent with no predictive signal."
+#| fig-cap: "Feature importances from LogisticRegression (classification) via coefficient magnitudes. All importances are near-equal and small — consistent with no predictive signal."
 clf_imp = clf_meta.get("feature_importances", [])
 if clf_imp:
     imp_df = pd.DataFrame(clf_imp[:15])
@@ -505,23 +498,268 @@ else:
 
 ---
 
-# 9. Limitations and Honest Interpretation
+# 9. Portfolio Optimizer
 
-**Dataset quality is the core limitation.** This Kaggle dataset is synthetically generated. All numeric variables have correlations < 0.01, all categories share identical average prices, and ratings are uniformly distributed across 1–5. No ML model can learn meaningful patterns from random data.
+## 9.1 Motivation and Design
 
-**What this means for the project:**
-- The classification model (ROC-AUC = 0.526) is 2.6 percentage points above random chance. This is not commercially useful.
-- The regression model (R² = -0.006) explains essentially none of the price variance.
-- The correct conclusion is: *the ML pipeline is architecturally correct and would produce useful predictions with real data*. The dataset does not support the business question.
+The Portfolio Optimizer is a **B2B decision-support tool** for brand strategists and product managers. Given a total budget and a positioning strategy, it recommends one benchmark product per selected category by scoring every candidate product in the dataset and greedily allocating the budget.
 
-**Other limitations:**
-- Correlation ≠ causation even in real data.
-- Product ratings are influenced by marketing, packaging aesthetics, influencer promotion, and retailer placement — none of which are in any cosmetics product attribute dataset.
-- Price is largely driven by brand tier, distribution channel, and perceived prestige — factors difficult to quantify.
-- The app is a decision-support tool. Even with good models, predictions carry uncertainty.
+This is **not a supervised ML model** — it does not learn from labelled examples. Instead, it is an algorithmic engine that combines three components:
+
+1. **Bayesian-adjusted ratings** — corrects for low review counts biasing raw ratings.
+2. **Strategy-specific scoring** — ranks products differently depending on the chosen goal (rating, value, premium, or budget positioning).
+3. **Greedy budget allocation** — selects the highest-scoring product per category while staying within budget, using a cost/score-loss ratio to decide which downgrades are cheapest.
+
+## 9.2 Bayesian Rating Adjustment
+
+Raw ratings are unreliable when a product has very few reviews — a product rated 5.0 by two reviewers is not comparable to one rated 4.2 by 3,000 reviewers. The Bayesian adjustment shrinks each product's rating toward the global mean, weighted by review volume:
+
+$$\text{adjusted\_rating}_i = \frac{n_i}{n_i + m} \cdot r_i + \frac{m}{n_i + m} \cdot C$$
+
+where:
+
+- $r_i$ = raw rating of product $i$
+- $n_i$ = number of reviews for product $i$
+- $m$ = global median review count (used as the shrinkage prior)
+- $C$ = global mean rating across all products
+
+Products with few reviews are pulled toward the global mean $C$; products with many reviews retain their observed rating. This approach is identical to the Bayesian rating formula used by IMDb for movie rankings.
+
+```{python}
+#| label: bayesian-rating
+#| echo: true
+raw_path = "../data/raw/most_used_beauty_cosmetics_products_extended.csv"
+df_port = pd.read_csv(raw_path)
+
+m_reviews = float(df_port["Number_of_Reviews"].median())
+C_rating  = float(df_port["Rating"].mean())
+
+df_port["adjusted_rating"] = (
+    (df_port["Number_of_Reviews"] / (df_port["Number_of_Reviews"] + m_reviews)) * df_port["Rating"] +
+    (m_reviews / (df_port["Number_of_Reviews"] + m_reviews)) * C_rating
+)
+
+print(f"Global median reviews (m): {m_reviews:.0f}")
+print(f"Global mean rating (C):    {C_rating:.4f}")
+print(f"\nRaw rating stats:      mean={df_port['Rating'].mean():.4f}, std={df_port['Rating'].std():.4f}")
+print(f"Adjusted rating stats: mean={df_port['adjusted_rating'].mean():.4f}, std={df_port['adjusted_rating'].std():.4f}")
+```
+
+```{python}
+#| label: fig-bayesian-adjustment
+#| fig-cap: "Bayesian adjustment shrinks extreme raw ratings toward the global mean. Products with very few reviews (left) are pulled more strongly toward C; high-review products (right) retain their observed rating."
+fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+
+sample_b = df_port.sample(2000, random_state=42)
+sc = axes[0].scatter(sample_b["Number_of_Reviews"], sample_b["Rating"],
+                     alpha=0.15, color="#c0556a", s=12, label="Raw rating")
+axes[0].scatter(sample_b["Number_of_Reviews"], sample_b["adjusted_rating"],
+                alpha=0.15, color="#6b3fa0", s=12, label="Adjusted rating")
+axes[0].axhline(C_rating, color="#2d9d5e", linestyle="--", linewidth=1.5,
+                label=f"Global mean C={C_rating:.2f}")
+axes[0].set_xlabel("Number of Reviews")
+axes[0].set_ylabel("Rating")
+axes[0].set_title("Raw vs Adjusted Rating by Review Count")
+axes[0].legend(markerscale=2)
+
+diff = df_port["adjusted_rating"] - df_port["Rating"]
+axes[1].hist(diff, bins=40, color="#6b3fa0", edgecolor="white", alpha=0.85)
+axes[1].axvline(0, color="#c0556a", linestyle="--")
+axes[1].set_xlabel("Adjusted − Raw Rating")
+axes[1].set_ylabel("Count")
+axes[1].set_title("Distribution of Adjustment Magnitude")
+
+plt.tight_layout()
+plt.show()
+```
+
+## 9.3 Strategy-Specific Scoring
+
+Each product receives a **portfolio score** computed differently per strategy:
+
+| Strategy | Score formula |
+|---|---|
+| Maximize Rating | `adjusted_rating` |
+| Maximize Value | `adjusted_rating × (avg_price / price)` |
+| Premium | `0.60 × adj_norm + 0.40 × price_norm` |
+| Budget-Friendly | `0.60 × adj_norm + 0.40 × (1 − price_norm)` |
+
+where `adj_norm = (adjusted_rating − 1) / 4` and `price_norm = price / max_price`.
+
+The *Maximize Value* formula explicitly rewards high rating per dollar. The *Premium* formula rewards both quality and price (a product that is both highly rated and expensive scores highest). The *Budget-Friendly* formula penalises high prices.
+
+```{python}
+#| label: fig-strategy-scores
+#| fig-cap: "Portfolio score distributions across strategies for a sample of 3,000 products. Premium and Budget-Friendly scores compress into a narrower range because they combine two normalised signals."
+strategies = {
+    "maximize_rating":  lambda r, p, avg, mx: r,
+    "maximize_value":   lambda r, p, avg, mx: r * (avg / p) if p > 0 else r,
+    "premium":          lambda r, p, avg, mx: 0.60 * ((r-1)/4) + 0.40 * (p/mx),
+    "budget_friendly":  lambda r, p, avg, mx: 0.60 * ((r-1)/4) + 0.40 * (1 - p/mx),
+}
+max_price = df_port["Price_USD"].max()
+avg_price = df_port["Price_USD"].mean()
+
+fig, axes = plt.subplots(2, 2, figsize=(11, 7))
+for ax, (strat, fn) in zip(axes.flat, strategies.items()):
+    scores = df_port.apply(
+        lambda row: fn(row["adjusted_rating"], row["Price_USD"], avg_price, max_price), axis=1
+    )
+    ax.hist(scores, bins=40, color="#c0556a", edgecolor="white", alpha=0.85)
+    ax.set_title(strat.replace("_", " ").title())
+    ax.set_xlabel("Portfolio Score")
+    ax.set_ylabel("Count")
+
+plt.suptitle("Portfolio Score Distributions by Strategy", y=1.01)
+plt.tight_layout()
+plt.show()
+```
+
+## 9.4 Greedy Budget Allocation
+
+After scoring, the top 15 candidates per category are collected. The allocator selects the highest-scoring product per category and then iteratively downgrades selections until the total cost fits within the budget. The downgrade priority is determined by the **score-loss-per-dollar-saved** ratio — the cheapest downgrade in terms of quality per dollar of saving is made first:
+
+$$\text{priority} = \frac{\Delta\text{score}}{\Delta\text{price}}$$
+
+A lower ratio means you lose less quality per dollar saved. This ensures the budget is spent where it has the most impact.
+
+```{python}
+#| label: portfolio-example
+#| echo: true
+# Simulate a portfolio optimisation for 3 categories with a $250 budget
+
+sample_cats = ["Serum", "Moisturizer", "Lipstick"]
+budget_ex   = 250.0
+
+for cat in sample_cats:
+    cat_df = df_port[df_port["Category"] == cat].copy()
+    cat_df["score"] = cat_df.apply(
+        lambda row: row["adjusted_rating"] * (avg_price / row["Price_USD"]) if row["Price_USD"] > 0 else 0, axis=1
+    )
+    top = cat_df.nlargest(1, "score")[["Brand", "Price_USD", "Rating", "adjusted_rating", "score"]]
+    print(f"\n{cat} — top Maximize Value candidate:")
+    print(top.to_string(index=False))
+```
+
+## 9.5 Interactive Swapping
+
+Beyond the initial recommendation, the app allows users to **swap any product with an alternative** directly in the browser. When a swap is made:
+
+- The replaced product moves into the alternatives list for that category
+- The alternatives are re-sorted by label (Cheaper → Better value → Higher-rated → Premium)
+- The total portfolio cost and remaining budget update instantly without calling the backend
+- If the custom selection exceeds the budget, an over-budget warning is shown
+- A "Reset to recommended" button restores the original optimizer output
+
+This makes the tool interactive and suitable for scenario planning — the user can explore trade-offs without re-running the optimization.
 
 ---
 
-# 10. Conclusion
+# 10. Application Architecture
 
-The end-to-end ML pipeline — data loading, feature engineering, leakage-safe pipelines, model ladders, evaluation, and API deployment — is complete and correct. The key empirical finding is that the dataset does not contain learnable signal for either target variable. This is itself an important result: data quality and realism are prerequisite conditions for applied ML. A real-world version of this app, built on scraped pricing data and verified consumer ratings, would produce actionable predictions following the same architecture.
+## 10.1 System Overview
+
+The Cosmetic Strategy Studio is a full-stack web application deployed on two separate services:
+
+| Layer | Technology | Host |
+|---|---|---|
+| Frontend | React 18 + Vite | Vercel |
+| Backend API | FastAPI + Uvicorn | Render |
+| ML models | scikit-learn + XGBoost (joblib) | Loaded at startup on Render |
+| Dataset | CSV (15,000 rows) | Loaded at startup on Render |
+
+```
+Browser (React SPA)
+       │
+       ├─► Vercel CDN  (/data/*.json — static files, no cold start)
+       │      leaderboard.json
+       │      metadata.json
+       │      data_summary.json
+       │
+       └─► Render Web Service (FastAPI — predictions only)
+              │  Loads at startup:
+              ├─ classifier_best.joblib
+              ├─ regressor_best.joblib
+              └─ raw CSV (for Portfolio Optimizer)
+```
+
+Static data (model leaderboard, feature importances, dataset summary) is pre-generated at training time and committed to `frontend/public/data/`. Vercel serves these files directly from its CDN — they never hit Render. Only the four prediction endpoints and the two portfolio endpoints require a live Render call.
+
+## 10.2 API Endpoints
+
+**Live backend endpoints (Render):**
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/health` | Liveness check — confirms models loaded |
+| POST | `/predict/rating` | Classification prediction for a new product |
+| POST | `/predict/price` | Regression prediction for a new product |
+| POST | `/predict/both` | Combined prediction + recommendation |
+| GET | `/recommend/options` | Filter options for Portfolio Optimizer |
+| POST | `/recommend/portfolio` | Run portfolio optimization |
+
+**Static data files (Vercel CDN — no backend call required):**
+
+| File | Content |
+|---|---|
+| `/data/leaderboard.json` | Full classification + regression model leaderboard |
+| `/data/metadata.json` | Model metadata, training params, feature importances |
+| `/data/data_summary.json` | Dataset statistics for Commercial Insights tab |
+
+## 10.3 ML Pipeline (Inference)
+
+At prediction time, the FastAPI backend reconstructs the same feature engineering steps used during training:
+
+1. Parse `Product_Size` string → numeric `Product_Size_ml`
+2. Compute `Review_Count_Log = log1p(Number_of_Reviews)`
+3. Pass the resulting DataFrame through the stored `sklearn.Pipeline`, which applies the fitted `ColumnTransformer` (median imputation + StandardScaler for numerics; most-frequent imputation + OneHotEncoder for categoricals)
+4. Return the model's prediction and probability
+
+The preprocessing pipeline is serialised inside the joblib file alongside the fitted model, so training/inference parity is guaranteed by construction.
+
+## 10.4 Frontend Features
+
+The React frontend has six tabs, each backed by one or more API endpoints:
+
+| Tab | Description |
+|---|---|
+| Welcome | Overview, navigation, and app introduction |
+| Product Success Predictor | Predicts high-rating probability for a configured product; supports saving configurations to localStorage |
+| Price Predictor | Predicts retail price for a configured product; same save/load feature |
+| Commercial Insights | Dataset-wide statistics: category breakdown, brand landscape, cruelty-free rates, rating distributions |
+| Portfolio Optimizer | Interactive portfolio builder with Bayesian scoring, greedy allocation, and live product swapping |
+| Model Performance | Full model leaderboard and training metrics for both classification and regression |
+
+**Saved product configurations** are persisted in the browser's `localStorage`, allowing users to save a product spec in one tab and load it in another without any backend involvement.
+
+---
+
+# 11. Limitations and Honest Interpretation
+
+**Dataset quality is the core limitation.** This Kaggle dataset is synthetically generated. All numeric variables have correlations < 0.01, all categories share identical average prices, and ratings are uniformly distributed across 1–5. No ML model can learn meaningful patterns from random data.
+
+**What this means for the ML models:**
+
+- The classification model (ROC-AUC = 0.526) is 2.6 percentage points above random chance — not commercially useful.
+- The regression model (R² = −0.006) explains essentially none of the price variance.
+- The correct conclusion is: *the ML pipeline is architecturally correct and would produce useful predictions with real data*. The dataset does not support the business question.
+
+**What this means for the Portfolio Optimizer:**
+
+The Bayesian adjustment and strategy scoring are algorithmically sound, but since ratings and prices are independently drawn from uniform distributions, all products have near-identical adjusted ratings (~3.0) and strategy scores. The optimizer still produces a valid recommendation, but the differentiation between products is minimal. On real data with genuine brand/category price variation and review-volume-driven rating variance, the Bayesian approach would produce meaningfully differentiated portfolios.
+
+**Other limitations:**
+
+- Product ratings in practice are driven by marketing, packaging aesthetics, influencer promotion, and distribution — none of which appear in any product attribute dataset.
+- Price is largely determined by brand tier, channel, and perceived prestige, not formulation attributes.
+- The app is a decision-support tool. Even with real data, predictions carry uncertainty and should be used alongside domain expertise.
+
+---
+
+# 12. Conclusion
+
+The end-to-end system — data loading, feature engineering, leakage-safe sklearn pipelines, a six-model classification ladder, a six-model regression ladder with and without Rating, hyperparameter tuning, evaluation, a Bayesian portfolio optimizer, a FastAPI REST backend, and a deployed React frontend — is complete and correct.
+
+The key empirical finding is that the dataset contains no learnable signal for either ML target variable. This is itself an important result: **data quality and realism are prerequisite conditions for applied ML**. A real-world version of this app built on scraped pricing data and verified consumer ratings would produce actionable predictions following exactly the same architecture.
+
+The Portfolio Optimizer demonstrates that data-driven decision support does not require supervised ML — algorithmic approaches grounded in statistics (Bayesian rating correction, strategy-specific scoring, greedy allocation with priority ordering) can produce interpretable, interactive recommendations even when predictive models are not viable.
