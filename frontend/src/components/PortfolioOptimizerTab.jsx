@@ -411,7 +411,6 @@ export default function PortfolioOptimizerTab() {
                             {modified ? 'Swapped' : 'Selected'}
                           </span>
                         </div>
-                        <div className="portfolio-alloc-product">{entry.selected.product_name}</div>
                         <div className="portfolio-alloc-brand">{entry.selected.brand}</div>
                       </div>
                     </div>
