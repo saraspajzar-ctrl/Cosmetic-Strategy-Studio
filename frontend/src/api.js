@@ -1,4 +1,5 @@
-const BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const BASE_URL = import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? 'https://cosmetic-strategy-studio.onrender.com' : '/api')
 
 async function request(method, path, body = null) {
   const opts = {
