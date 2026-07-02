@@ -1,0 +1,175 @@
+{
+  "task": "regression",
+  "target": "Price_USD",
+  "variant": "no_rating",
+  "best_model": "XGBoost_Tuned",
+  "features": [
+    "Brand",
+    "Category",
+    "Usage_Frequency",
+    "Number_of_Reviews",
+    "Product_Size_ml",
+    "Review_Count_Log",
+    "Skin_Type",
+    "Gender_Target",
+    "Packaging_Type",
+    "Main_Ingredient",
+    "Cruelty_Free",
+    "Country_of_Origin"
+  ],
+  "metrics": {
+    "model": "XGBoost_Tuned",
+    "variant": "no_rating",
+    "train_r2": 0.0062,
+    "test_r2": -0.0009,
+    "test_mae": 34.9856,
+    "test_rmse": 40.5413,
+    "cv_r2_mean": -0.0002,
+    "cv_r2_std": 0.0002,
+    "overfit_gap": 0.0071,
+    "best_params": {
+      "subsample": 0.8,
+      "n_estimators": 100,
+      "min_child_weight": 1,
+      "max_depth": 3,
+      "learning_rate": 0.01,
+      "colsample_bytree": 0.8
+    }
+  },
+  "feature_importances": [
+    {
+      "feature": "Country_of_Origin_UK",
+      "importance": 0.019032
+    },
+    {
+      "feature": "Category_Concealer",
+      "importance": 0.017482
+    },
+    {
+      "feature": "Skin_Type_Normal",
+      "importance": 0.017039
+    },
+    {
+      "feature": "Category_CC Cream",
+      "importance": 0.01693
+    },
+    {
+      "feature": "Main_Ingredient_Shea Butter",
+      "importance": 0.015797
+    },
+    {
+      "feature": "Brand_Becca",
+      "importance": 0.015535
+    },
+    {
+      "feature": "Country_of_Origin_South Korea",
+      "importance": 0.015522
+    },
+    {
+      "feature": "Gender_Target_Male",
+      "importance": 0.014947
+    },
+    {
+      "feature": "Category_Face Mask",
+      "importance": 0.014786
+    },
+    {
+      "feature": "Category_Eyeliner",
+      "importance": 0.014478
+    },
+    {
+      "feature": "Category_Makeup Remover",
+      "importance": 0.014355
+    },
+    {
+      "feature": "Category_Primer",
+      "importance": 0.014266
+    },
+    {
+      "feature": "Category_Highlighter",
+      "importance": 0.014241
+    },
+    {
+      "feature": "Category_Cleanser",
+      "importance": 0.014119
+    },
+    {
+      "feature": "Skin_Type_Sensitive",
+      "importance": 0.013891
+    },
+    {
+      "feature": "Country_of_Origin_Australia",
+      "importance": 0.013867
+    },
+    {
+      "feature": "Brand_Anastasia Beverly Hills",
+      "importance": 0.013331
+    },
+    {
+      "feature": "Packaging_Type_Spray",
+      "importance": 0.013217
+    },
+    {
+      "feature": "Brand_RMS Beauty",
+      "importance": 0.012955
+    },
+    {
+      "feature": "Category_Setting Spray",
+      "importance": 0.01292
+    }
+  ],
+  "learning_curve": {
+    "train_sizes": [
+      1020,
+      2331,
+      3642,
+      4954,
+      6265,
+      7577,
+      8888,
+      10200
+    ],
+    "train_mean": [
+      0.04813065079512795,
+      0.025531688574702227,
+      0.018855327154853163,
+      0.013789043017692616,
+      0.011722257151303862,
+      0.01016208340564224,
+      0.008594508776415322,
+      0.007516099559931422
+    ],
+    "val_mean": [
+      -0.0027047075613100048,
+      -0.003291129763005873,
+      -0.002875149990713832,
+      -0.0009427692740960226,
+      -0.0007111880021425154,
+      -0.0004745485694912954,
+      -0.0004485705398377338,
+      -0.00020297797889698988
+    ],
+    "train_std": [
+      0.0011955166519870212,
+      0.0010271951245714812,
+      0.0013446824721727163,
+      0.000599544321440555,
+      0.0003432534954343423,
+      0.00034803055678593115,
+      0.00028228413882948566,
+      0.0002515325786694765
+    ],
+    "val_std": [
+      0.0026571528421499247,
+      0.0021403112167123163,
+      0.0021527873722142514,
+      0.0008228049299365442,
+      0.0010990928014081112,
+      0.00046734613289280423,
+      0.0005135774837457676,
+      0.00022407042573603466
+    ]
+  },
+  "train_size": 12750,
+  "test_size": 2250
+}

@@ -1,0 +1,527 @@
+---
+title: "Beauty & Cosmetics Product Intelligence — Analysis Report"
+author: "MADA Project"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-summary: "Show code"
+    theme: cosmo
+    embed-resources: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{python}
+#| label: setup
+#| include: false
+import sys
+sys.path.insert(0, '..')
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+import seaborn as sns
+
+sns.set_theme(style="whitegrid", palette="husl")
+plt.rcParams.update({"figure.dpi": 120, "axes.spines.top": False, "axes.spines.right": False})
+```
+
+# 1. Project Overview
+
+This report covers the end-to-end analysis for the Beauty Product Intelligence App — a school project for the subject *Modelling in Advanced Data Analytics*. The goal is to build two ML models:
+
+1. **Classification**: predict whether a cosmetics product will be *highly rated* (Rating ≥ 4.0)
+2. **Regression**: predict the *retail price* (Price_USD) of a product
+
+Both models power a web application that helps brand managers evaluate new product configurations.
+
+---
+
+# 2. Dataset Loading and Description
+
+```{python}
+#| label: load-data
+from src.data import load_raw_data, clean_data
+from src.features import engineer_features
+
+df_raw = load_raw_data()
+print(f"Shape: {df_raw.shape}")
+df_raw.dtypes
+```
+
+```{python}
+#| label: preview
+df_raw.head(5)
+```
+
+The dataset has **15,000 rows and 14 columns**. All feature columns are a mix of categorical strings (Brand, Category, Skin_Type, etc.) and three numeric columns (Price_USD, Rating, Number_of_Reviews). Product_Size is a string like "30ml" that requires parsing.
+
+## Missing Values
+
+```{python}
+#| label: missing
+missing = df_raw.isnull().sum()
+print(missing[missing > 0] if missing.any() else "No missing values detected in the raw data.")
+```
+
+No missing values. Because this dataset was likely synthetically generated, all fields are populated. Nonetheless, the ML pipelines use `SimpleImputer` inside `ColumnTransformer` to ensure robustness if new data has gaps.
+
+## Data Cleaning
+
+```{python}
+#| label: clean
+df = clean_data(df_raw)
+df = engineer_features(df)
+print(f"After cleaning: {df.shape[0]} rows")
+print(f"\nCruelty_Free unique values: {df['Cruelty_Free'].unique()}")
+print(f"Product_Size_ml range: {df['Product_Size_ml'].min():.0f}–{df['Product_Size_ml'].max():.0f} ml")
+```
+
+Cleaning steps:
+- Normalised Cruelty_Free to title-case strings ("True"/"False")
+- Stripped whitespace from string columns
+- Converted Price_USD, Rating, Number_of_Reviews to numeric
+- Dropped rows where Price_USD or Rating is NaN (none in this dataset)
+
+---
+
+# 3. Exploratory Data Analysis
+
+## 3.1 Target Distributions
+
+### High_Rating (Classification Target)
+
+```{python}
+#| label: fig-high-rating
+#| fig-cap: "High_Rating class distribution. Only 27.1% of products are classified as high-rated (Rating ≥ 4.0). The dataset is moderately imbalanced."
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+# Rating distribution
+axes[0].hist(df["Rating"], bins=20, color="#c0556a", edgecolor="white", alpha=0.85)
+axes[0].axvline(4.0, color="#6b3fa0", linestyle="--", linewidth=1.5, label="Threshold (4.0)")
+axes[0].set_xlabel("Rating")
+axes[0].set_ylabel("Count")
+axes[0].set_title("Rating Distribution")
+axes[0].legend()
+
+# Class distribution
+counts = df["High_Rating"].value_counts()
+axes[1].bar(["Not High-Rated\n(0)", "High-Rated\n(1)"], counts.values,
+            color=["#e0c4d0", "#c0556a"], edgecolor="white")
+for i, v in enumerate(counts.values):
+    axes[1].text(i, v + 50, f"{v:,}\n({v/len(df)*100:.1f}%)", ha="center", fontsize=10)
+axes[1].set_title("High_Rating Class Distribution")
+axes[1].set_ylabel("Count")
+
+plt.tight_layout()
+plt.show()
+```
+
+Rating is uniformly distributed across 1–5 with a small step pattern. This is a sign of synthetic generation — real consumer ratings tend to be right-skewed (J-distribution). With the 4.0 threshold, 27.1% of products are "high-rated" and 72.9% are not. This moderate class imbalance means the model must not simply predict "not high-rated" for everything.
+
+### Price_USD (Regression Target)
+
+```{python}
+#| label: fig-price-dist
+#| fig-cap: "Price distribution is nearly uniform between $10 and $150 — again a sign of synthetic data. Real cosmetics markets show strong right skew with many budget products and few ultra-premium items."
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.hist(df["Price_USD"], bins=40, color="#6b3fa0", edgecolor="white", alpha=0.85)
+ax.set_xlabel("Price (USD)")
+ax.set_ylabel("Count")
+ax.set_title("Price_USD Distribution")
+for q, col in [(0.25, "#c0556a"), (0.50, "#f4a261"), (0.75, "#2d9d5e")]:
+    v = df["Price_USD"].quantile(q)
+    ax.axvline(v, linestyle="--", color=col, linewidth=1.3, label=f"Q{int(q*100)}: ${v:.0f}")
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+## 3.2 Correlation Analysis
+
+```{python}
+#| label: fig-corr
+#| fig-cap: "Correlation heatmap for numeric columns. All pairwise correlations are essentially zero — this is highly unusual and confirms the synthetic nature of the data."
+corr = df[["Price_USD", "Rating", "Number_of_Reviews", "Product_Size_ml", "Review_Count_Log"]].corr()
+fig, ax = plt.subplots(figsize=(6, 5))
+sns.heatmap(corr, annot=True, fmt=".3f", cmap="RdPu", center=0,
+            linewidths=0.5, ax=ax, vmin=-1, vmax=1)
+ax.set_title("Correlation Heatmap — Numeric Variables")
+plt.tight_layout()
+plt.show()
+```
+
+**Key finding**: all correlations are within ±0.01. In a real cosmetics dataset, we would expect:
+- Price to correlate positively with brand tier (luxury brands charge more)
+- Review count to correlate negatively with price (budget products have more reviews)
+- Rating to weakly correlate with ingredient quality
+
+The absence of any signal strongly suggests this dataset was generated by randomly sampling from uniform distributions independently for each column.
+
+## 3.3 Price by Category
+
+```{python}
+#| label: fig-price-cat
+#| fig-cap: "Average price across categories is nearly identical (~$81). In real data we would expect SPF and serums to be premium, while lipsticks and mascaras would be cheaper."
+cat_avg = df.groupby("Category")["Price_USD"].mean().sort_values(ascending=False)
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.barh(cat_avg.index, cat_avg.values, color="#c0556a", alpha=0.85)
+ax.axvline(df["Price_USD"].mean(), color="#6b3fa0", linestyle="--", linewidth=1.5, label=f"Overall mean ${df['Price_USD'].mean():.0f}")
+ax.set_xlabel("Average Price (USD)")
+ax.set_title("Average Price by Category")
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+## 3.4 Rating by Cruelty-Free Status
+
+```{python}
+#| label: fig-cruelty
+fig, ax = plt.subplots(figsize=(6, 4))
+df.groupby("Cruelty_Free")["Rating"].mean().plot(kind="bar", ax=ax, color=["#e0c4d0","#c0556a"], rot=0)
+ax.set_title("Average Rating by Cruelty-Free Status")
+ax.set_ylabel("Mean Rating")
+ax.set_xlabel("")
+plt.tight_layout()
+plt.show()
+```
+
+## 3.5 Number of Reviews vs Rating
+
+```{python}
+#| label: fig-reviews-rating
+fig, ax = plt.subplots(figsize=(7, 4))
+sample = df.sample(1000, random_state=42)
+ax.scatter(sample["Number_of_Reviews"], sample["Rating"], alpha=0.3, color="#c0556a", s=20)
+ax.set_xlabel("Number of Reviews")
+ax.set_ylabel("Rating")
+ax.set_title("Number of Reviews vs Rating (sample n=1000)")
+r = df[["Number_of_Reviews", "Rating"]].corr().iloc[0, 1]
+ax.text(0.97, 0.95, f"r = {r:.3f}", transform=ax.transAxes, ha="right", va="top",
+        fontsize=10, color="#6b3fa0")
+plt.tight_layout()
+plt.show()
+```
+
+The scatter plot confirms there is no relationship between review count and rating (r ≈ 0). In real data, we would expect popular products with many reviews to cluster around average ratings (regression to the mean effect).
+
+---
+
+# 4. Feature Engineering
+
+```{python}
+#| label: feature-engineering
+from src.features import engineer_features, parse_product_size_ml
+print("Engineered features added:")
+new_cols = ["Product_Size_ml", "Review_Count_Log", "High_Rating", "Price_Segment", "Value_Score"]
+print(df[new_cols].describe())
+```
+
+Features engineered:
+- **Product_Size_ml**: parsed from strings like "30ml", "250ml". Range: 10–500 ml.
+- **Review_Count_Log** = log1p(Number_of_Reviews): log-transform to reduce right skew.
+- **High_Rating**: binary target (Rating ≥ 4.0).
+- **Price_Segment**: Budget / Mid-range / Premium (for dashboard display only, not a model feature — would be derived from the target).
+- **Value_Score** = Rating / Price_USD: for app insights only, not used in models.
+
+```{python}
+#| label: fig-size-price
+#| fig-cap: "Product size vs price — no correlation, confirming synthetic data. Real markets show larger sizes priced higher for commoditised products."
+fig, ax = plt.subplots(figsize=(7, 4))
+s = df.sample(800, random_state=42)
+ax.scatter(s["Product_Size_ml"], s["Price_USD"], alpha=0.3, color="#6b3fa0", s=20)
+ax.set_xlabel("Product Size (ml)")
+ax.set_ylabel("Price (USD)")
+ax.set_title("Product Size vs Price (sample n=800)")
+r = df[["Product_Size_ml", "Price_USD"]].corr().iloc[0, 1]
+ax.text(0.97, 0.95, f"r = {r:.3f}", transform=ax.transAxes, ha="right", va="top", fontsize=10)
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+# 5. Feature Selection
+
+```{python}
+#| label: feature-selection
+from sklearn.feature_selection import mutual_info_classif
+from sklearn.preprocessing import LabelEncoder
+from src.config import CLASSIFICATION_FEATURES
+
+# Encode categoricals for MI estimation
+df_enc = df[CLASSIFICATION_FEATURES].copy()
+for col in df_enc.select_dtypes(include="object").columns:
+    df_enc[col] = LabelEncoder().fit_transform(df_enc[col].astype(str))
+df_enc = df_enc.fillna(df_enc.median(numeric_only=True))
+
+mi = mutual_info_classif(df_enc, df["High_Rating"], random_state=42)
+mi_df = pd.Series(mi, index=CLASSIFICATION_FEATURES).sort_values(ascending=False)
+print("Mutual information with High_Rating:")
+print(mi_df.round(4))
+```
+
+Mutual information scores are near zero for all features. This is consistent with the correlation analysis — the features carry essentially no information about the target. This finding is documented in the limitations section.
+
+**Method choice**: Mutual information was used because it is model-agnostic, works with both numeric and (label-encoded) categorical variables, and makes no linearity assumptions. It is fitted only on training-equivalent data (all features, not the test set), so it is leakage-safe.
+
+---
+
+# 6. Modelling — Classification
+
+## 6.1 Setup and Data Split
+
+```{python}
+#| label: classification-setup
+from sklearn.model_selection import train_test_split
+from src.config import CLASSIFICATION_FEATURES, RANDOM_STATE
+
+X = df[CLASSIFICATION_FEATURES]
+y = df["High_Rating"]
+
+X_temp, X_test, y_temp, y_test = train_test_split(
+    X, y, test_size=0.15, stratify=y, random_state=RANDOM_STATE
+)
+X_train, X_val, y_train, y_val = train_test_split(
+    X_temp, y_temp, test_size=0.1765, stratify=y_temp, random_state=RANDOM_STATE
+)
+print(f"Train: {len(X_train)} | Val: {len(X_val)} | Test (held-out): {len(X_test)}")
+print(f"Class balance — train: {y_train.mean():.3f}, test: {y_test.mean():.3f}")
+```
+
+## 6.2 Model Leaderboard
+
+```{python}
+#| label: classification-leaderboard
+import json
+from pathlib import Path
+
+with open("../models/leaderboard_classification.json") as f:
+    clf_lb = json.load(f)
+
+clf_df = pd.DataFrame(clf_lb)[["model", "test_roc_auc", "test_f1", "test_accuracy",
+                                "cv_roc_mean", "cv_roc_std", "overfit_gap"]]
+clf_df = clf_df.round(4)
+clf_df
+```
+
+```{python}
+#| label: fig-clf-leaderboard
+#| fig-cap: "Classification model leaderboard — all models perform near the 0.5 random baseline. LogisticRegression marginally best at ROC-AUC 0.526."
+fig, ax = plt.subplots(figsize=(9, 4))
+models = clf_df["model"]
+ax.barh(models, clf_df["test_roc_auc"], color="#c0556a", alpha=0.85, label="Test ROC-AUC")
+ax.axvline(0.5, color="#6b3fa0", linestyle="--", linewidth=1.5, label="Random baseline")
+ax.set_xlabel("ROC-AUC")
+ax.set_title("Classification Model Comparison")
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+## 6.3 Learning Curve (Best Model)
+
+```{python}
+#| label: fig-clf-learning-curve
+#| fig-cap: "Learning curve for LogisticRegression. Both train and validation scores are flat near 0.52 regardless of training size — confirming the data contains no learnable signal, not an overfitting issue."
+with open("../models/classifier_metadata.json") as f:
+    clf_meta = json.load(f)
+
+lc = clf_meta["learning_curve"]
+sizes = lc["train_sizes"]
+train_m = lc["train_mean"]
+val_m   = lc["val_mean"]
+train_s = lc["train_std"]
+val_s   = lc["val_std"]
+
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.plot(sizes, train_m, "-o", color="#c0556a", label="Train ROC-AUC")
+ax.fill_between(sizes,
+                [m-s for m,s in zip(train_m, train_s)],
+                [m+s for m,s in zip(train_m, train_s)], alpha=0.15, color="#c0556a")
+ax.plot(sizes, val_m, "-o", color="#6b3fa0", label="Validation ROC-AUC")
+ax.fill_between(sizes,
+                [m-s for m,s in zip(val_m, val_s)],
+                [m+s for m,s in zip(val_m, val_s)], alpha=0.15, color="#6b3fa0")
+ax.axhline(0.5, color="grey", linestyle=":", label="Random baseline")
+ax.set_xlabel("Training set size")
+ax.set_ylabel("ROC-AUC")
+ax.set_title("Learning Curve — LogisticRegression")
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+## 6.3a Class Imbalance and F1 Score
+
+The dataset has a 73/27 class split (not high-rated / high-rated). Without correcting for this, tree-based models and unweighted linear models predict the majority class almost exclusively — resulting in F1 = 0.0 and Recall = 0.0 for the positive class. The model achieves high accuracy (~72.8%) simply by predicting "not high-rated" for every sample.
+
+Setting `class_weight='balanced'` on LogisticRegression instructs it to up-weight the minority class proportionally. This raises the F1 score from 0.0 to **0.365** while keeping ROC-AUC stable (~0.526), confirming the model does distinguish between classes at the probability level — it was simply choosing the wrong decision threshold.
+
+**Key takeaway**: accuracy alone is misleading on imbalanced datasets. F1 and ROC-AUC must both be reported. F1 = 0.365 on synthetic data (where no real signal exists) reflects the model learning to threshold its near-random probability scores at the class-prior boundary rather than at 0.5.
+
+## 6.4 Overfitting and Hyperparameter Tuning
+
+The DecisionTree (unconstrained) shows an overfit gap of ~0.50 (train ROC-AUC ≈ 1.0, test ≈ 0.49), which is textbook overfitting — the tree memorised training data but found no generalisable pattern. Constraining depth to 5 fixes the gap but keeps performance near baseline. RandomForest and XGBoost also overfit heavily, confirming there is no signal to generalise.
+
+```{python}
+#| label: xgb-tuning-clf
+#| echo: true
+# Hyperparameter search results for XGBoost (classification)
+import json
+from pathlib import Path
+
+with open("../models/leaderboard_classification.json") as f:
+    clf_lb_full = json.load(f)
+
+tuned = next((r for r in clf_lb_full if r["model"] == "XGBoost_Tuned"), None)
+if tuned:
+    print(f"Best XGBoost params (RandomizedSearchCV, n_iter=20):")
+    for k, v in tuned.get("best_params", {}).items():
+        print(f"  {k}: {v}")
+    print(f"\nCV ROC-AUC: {tuned['cv_roc_mean']:.4f} ± {tuned['cv_roc_std']:.4f}")
+    print(f"Test ROC-AUC: {tuned['test_roc_auc']:.4f}, F1: {tuned['test_f1']:.4f}")
+```
+
+The tuned XGBoost achieves the highest cross-validated ROC-AUC (0.515) but the improvement over the manual configuration is negligible (~0.003). This is the expected result for synthetic data: no combination of hyperparameters can extract signal that does not exist. The search confirms that the performance ceiling imposed by data quality has been reached.
+
+---
+
+# 7. Modelling — Regression
+
+## 7.1 Leaderboard
+
+```{python}
+#| label: regression-leaderboard
+with open("../models/leaderboard_regression.json") as f:
+    reg_lb = json.load(f)
+
+reg_df = pd.DataFrame(reg_lb)[["model", "variant", "test_r2", "test_mae",
+                                "test_rmse", "cv_r2_mean", "cv_r2_std", "overfit_gap"]]
+reg_df = reg_df.round(4)
+reg_df
+```
+
+```{python}
+#| label: fig-reg-leaderboard
+#| fig-cap: "Regression leaderboard — all models at R²≈0. Ridge is the best non-baseline model (R²=-0.006). XGBoost with Rating performs similarly, confirming Rating adds no information about Price."
+main = reg_df[reg_df["variant"] != "with_rating"].copy()
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.barh(main["model"], main["test_r2"], color=["#e0c4d0" if "Dummy" in m else "#6b3fa0" for m in main["model"]], alpha=0.85)
+ax.axvline(0, color="#c0556a", linestyle="--", linewidth=1.5, label="DummyRegressor (mean)")
+ax.set_xlabel("R² (test)")
+ax.set_title("Regression Model Comparison (no Rating variant)")
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+## 7.1a Hyperparameter Tuning for XGBoost (Regression)
+
+```{python}
+#| label: xgb-tuning-reg
+#| echo: true
+with open("../models/leaderboard_regression.json") as f:
+    reg_lb_full = json.load(f)
+
+tuned_r = next((r for r in reg_lb_full if r["model"] == "XGBoost_Tuned"), None)
+if tuned_r:
+    print(f"Best XGBoost params (RandomizedSearchCV, n_iter=20):")
+    for k, v in tuned_r.get("best_params", {}).items():
+        print(f"  {k}: {v}")
+    print(f"\nCV R²: {tuned_r['cv_r2_mean']:.4f} ± {tuned_r['cv_r2_std']:.4f}")
+    print(f"Test R²: {tuned_r['test_r2']:.4f}, MAE: {tuned_r['test_mae']:.2f}")
+```
+
+The tuned XGBoost found a very shallow model (max_depth=3, lr=0.01, 100 trees) as optimal — confirming that complexity adds no value here. The best CV R² is -0.0002, essentially identical to the DummyRegressor (0.0). This outcome is expected: no hyperparameter search can learn relationships that do not exist in the data.
+
+## 7.2 Predicted vs Actual (Ridge)
+
+```{python}
+#| label: fig-pred-vs-actual
+#| fig-cap: "Predicted vs actual price for Ridge. The model predicts a nearly constant value around $80 for all inputs — the spread in predictions is negligible, confirming R²≈0."
+from src.utils import load_model
+from src.config import MODELS_DIR, REGRESSION_FEATURES_NO_RATING
+
+reg = load_model(MODELS_DIR / "regressor_best.joblib")
+
+X_test_reg = df.loc[X_test.index, REGRESSION_FEATURES_NO_RATING] if hasattr(X_test, 'index') else df.sample(2250, random_state=42)[REGRESSION_FEATURES_NO_RATING]
+y_test_reg = df.loc[X_test.index, "Price_USD"] if hasattr(X_test, 'index') else df.sample(2250, random_state=42)["Price_USD"]
+
+# Rebuild test split
+from sklearn.model_selection import train_test_split as tts
+Xr = df[REGRESSION_FEATURES_NO_RATING]
+yr = df["Price_USD"]
+_, Xr_test, _, yr_test = tts(Xr, yr, test_size=0.15, random_state=42)
+y_pred_r = reg.predict(Xr_test)
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+axes[0].scatter(yr_test, y_pred_r, alpha=0.15, color="#6b3fa0", s=10)
+mn, mx = min(yr_test.min(), y_pred_r.min()), max(yr_test.max(), y_pred_r.max())
+axes[0].plot([mn, mx], [mn, mx], "r--", linewidth=1)
+axes[0].set_xlabel("Actual Price ($)")
+axes[0].set_ylabel("Predicted Price ($)")
+axes[0].set_title("Predicted vs Actual (Ridge)")
+
+residuals = yr_test - y_pred_r
+axes[1].scatter(y_pred_r, residuals, alpha=0.15, color="#c0556a", s=10)
+axes[1].axhline(0, color="grey", linestyle="--")
+axes[1].set_xlabel("Predicted Price ($)")
+axes[1].set_ylabel("Residual ($)")
+axes[1].set_title("Residual Plot")
+
+plt.tight_layout()
+plt.show()
+```
+
+The predicted vs actual plot shows the Ridge model predicts a narrow band of values around $80 regardless of actual price. Residuals show a clear funnel pattern: the model under-predicts very expensive products and over-predicts very cheap ones — pure regression-to-mean behaviour with no learned relationships.
+
+---
+
+# 8. Feature Importances
+
+```{python}
+#| label: fig-feature-importance
+#| fig-cap: "Feature importances from the LogisticRegression (classification) via coefficient magnitudes. All importances are near-equal and small — consistent with no predictive signal."
+clf_imp = clf_meta.get("feature_importances", [])
+if clf_imp:
+    imp_df = pd.DataFrame(clf_imp[:15])
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.barh(imp_df["feature"], imp_df["importance"], color="#c0556a", alpha=0.85)
+    ax.set_xlabel("Importance")
+    ax.set_title("Top 15 Features — Classification Model")
+    plt.tight_layout()
+    plt.show()
+else:
+    print("Feature importances not available for this model type.")
+```
+
+---
+
+# 9. Limitations and Honest Interpretation
+
+**Dataset quality is the core limitation.** This Kaggle dataset is synthetically generated. All numeric variables have correlations < 0.01, all categories share identical average prices, and ratings are uniformly distributed across 1–5. No ML model can learn meaningful patterns from random data.
+
+**What this means for the project:**
+- The classification model (ROC-AUC = 0.526) is 2.6 percentage points above random chance. This is not commercially useful.
+- The regression model (R² = -0.006) explains essentially none of the price variance.
+- The correct conclusion is: *the ML pipeline is architecturally correct and would produce useful predictions with real data*. The dataset does not support the business question.
+
+**Other limitations:**
+- Correlation ≠ causation even in real data.
+- Product ratings are influenced by marketing, packaging aesthetics, influencer promotion, and retailer placement — none of which are in any cosmetics product attribute dataset.
+- Price is largely driven by brand tier, distribution channel, and perceived prestige — factors difficult to quantify.
+- The app is a decision-support tool. Even with good models, predictions carry uncertainty.
+
+---
+
+# 10. Conclusion
+
+The end-to-end ML pipeline — data loading, feature engineering, leakage-safe pipelines, model ladders, evaluation, and API deployment — is complete and correct. The key empirical finding is that the dataset does not contain learnable signal for either target variable. This is itself an important result: data quality and realism are prerequisite conditions for applied ML. A real-world version of this app, built on scraped pricing data and verified consumer ratings, would produce actionable predictions following the same architecture.

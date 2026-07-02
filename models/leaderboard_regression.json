@@ -1,0 +1,98 @@
+[
+  {
+    "model": "DummyRegressor",
+    "variant": "no_rating",
+    "train_r2": 0.0,
+    "test_r2": -0.0,
+    "test_mae": 34.9761,
+    "test_rmse": 40.5232,
+    "cv_r2_mean": -0.0003,
+    "cv_r2_std": 0.0002,
+    "overfit_gap": 0.0
+  },
+  {
+    "model": "Ridge",
+    "variant": "no_rating",
+    "train_r2": 0.0083,
+    "test_r2": -0.0064,
+    "test_mae": 35.0381,
+    "test_rmse": 40.6521,
+    "cv_r2_mean": -0.0084,
+    "cv_r2_std": 0.0044,
+    "overfit_gap": 0.0147
+  },
+  {
+    "model": "DecisionTree",
+    "variant": "no_rating",
+    "train_r2": 1.0,
+    "test_r2": -1.1086,
+    "test_mae": 47.9727,
+    "test_rmse": 58.8435,
+    "cv_r2_mean": -1.0605,
+    "cv_r2_std": 0.0209,
+    "overfit_gap": 2.1086
+  },
+  {
+    "model": "DecisionTree_depth6",
+    "variant": "no_rating",
+    "train_r2": 0.0179,
+    "test_r2": -0.0205,
+    "test_mae": 35.1975,
+    "test_rmse": 40.9356,
+    "cv_r2_mean": -0.0161,
+    "cv_r2_std": 0.0073,
+    "overfit_gap": 0.0384
+  },
+  {
+    "model": "RandomForest",
+    "variant": "no_rating",
+    "train_r2": 0.8587,
+    "test_r2": -0.03,
+    "test_mae": 35.316,
+    "test_rmse": 41.1267,
+    "cv_r2_mean": -0.0292,
+    "cv_r2_std": 0.0031,
+    "overfit_gap": 0.8887
+  },
+  {
+    "model": "XGBoost",
+    "variant": "no_rating",
+    "train_r2": 0.1989,
+    "test_r2": -0.024,
+    "test_mae": 35.2797,
+    "test_rmse": 41.0073,
+    "cv_r2_mean": -0.0312,
+    "cv_r2_std": 0.0027,
+    "overfit_gap": 0.2229
+  },
+  {
+    "model": "XGBoost",
+    "variant": "with_rating",
+    "train_r2": 0.2107,
+    "test_r2": -0.0233,
+    "test_mae": 35.2057,
+    "test_rmse": 40.9916,
+    "cv_r2_mean": -0.0319,
+    "cv_r2_std": 0.0024,
+    "overfit_gap": null
+  },
+  {
+    "model": "XGBoost_Tuned",
+    "variant": "no_rating",
+    "train_r2": 0.0062,
+    "test_r2": -0.0009,
+    "test_mae": 34.9856,
+    "test_rmse": 40.5413,
+    "cv_r2_mean": -0.0002,
+    "cv_r2_std": 0.0002,
+    "overfit_gap": 0.0071,
+    "best_params": {
+      "subsample": 0.8,
+      "n_estimators": 100,
+      "min_child_weight": 1,
+      "max_depth": 3,
+      "learning_rate": 0.01,
+      "colsample_bytree": 0.8
+    }
+  }
+]

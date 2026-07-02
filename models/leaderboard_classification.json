@@ -1,0 +1,101 @@
+[
+  {
+    "model": "DummyClassifier",
+    "train_roc_auc": 0.5,
+    "val_roc_auc": 0.5,
+    "test_roc_auc": 0.5,
+    "test_accuracy": 0.7284,
+    "test_f1": 0.0,
+    "test_precision": 0.0,
+    "test_recall": 0.0,
+    "cv_roc_mean": 0.5,
+    "cv_roc_std": 0.0,
+    "overfit_gap": 0.0
+  },
+  {
+    "model": "LogisticRegression",
+    "train_roc_auc": 0.5691,
+    "val_roc_auc": 0.4776,
+    "test_roc_auc": 0.5259,
+    "test_accuracy": 0.5276,
+    "test_f1": 0.3646,
+    "test_precision": 0.2872,
+    "test_recall": 0.4992,
+    "cv_roc_mean": 0.5118,
+    "cv_roc_std": 0.0088,
+    "overfit_gap": 0.0915
+  },
+  {
+    "model": "DecisionTree",
+    "train_roc_auc": 1.0,
+    "val_roc_auc": 0.4958,
+    "test_roc_auc": 0.493,
+    "test_accuracy": 0.5956,
+    "test_f1": 0.2649,
+    "test_precision": 0.2616,
+    "test_recall": 0.2684,
+    "cv_roc_mean": 0.5083,
+    "cv_roc_std": 0.0033,
+    "overfit_gap": 0.5042
+  },
+  {
+    "model": "DecisionTree_depth5",
+    "train_roc_auc": 0.5323,
+    "val_roc_auc": 0.5108,
+    "test_roc_auc": 0.4944,
+    "test_accuracy": 0.7249,
+    "test_f1": 0.0159,
+    "test_precision": 0.2778,
+    "test_recall": 0.0082,
+    "cv_roc_mean": 0.5012,
+    "cv_roc_std": 0.0128,
+    "overfit_gap": 0.0215
+  },
+  {
+    "model": "RandomForest",
+    "train_roc_auc": 1.0,
+    "val_roc_auc": 0.5128,
+    "test_roc_auc": 0.5106,
+    "test_accuracy": 0.7284,
+    "test_f1": 0.0,
+    "test_precision": 0.0,
+    "test_recall": 0.0,
+    "cv_roc_mean": 0.5097,
+    "cv_roc_std": 0.014,
+    "overfit_gap": 0.4872
+  },
+  {
+    "model": "XGBoost",
+    "train_roc_auc": 0.8801,
+    "val_roc_auc": 0.4926,
+    "test_roc_auc": 0.5208,
+    "test_accuracy": 0.7244,
+    "test_f1": 0.0032,
+    "test_precision": 0.0909,
+    "test_recall": 0.0016,
+    "cv_roc_mean": 0.5104,
+    "cv_roc_std": 0.0164,
+    "overfit_gap": 0.3875
+  },
+  {
+    "model": "XGBoost_Tuned",
+    "train_roc_auc": 0.9653,
+    "val_roc_auc": 0.5018,
+    "test_roc_auc": 0.5092,
+    "test_accuracy": 0.692,
+    "test_f1": 0.0894,
+    "test_precision": 0.2267,
+    "test_recall": 0.0556,
+    "cv_roc_mean": 0.5148,
+    "cv_roc_std": 0.0103,
+    "overfit_gap": 0.4635,
+    "best_params": {
+      "subsample": 1.0,
+      "n_estimators": 300,
+      "min_child_weight": 3,
+      "max_depth": 6,
+      "learning_rate": 0.15,
+      "colsample_bytree": 0.8
+    }
+  }
+]

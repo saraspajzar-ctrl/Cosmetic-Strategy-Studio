@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cosmetic Strategy Studio</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232F2430'/%3E%3Cpath d='M16 4 L28 16 L16 28 L4 16 Z' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 10 L22 16 L16 22 L10 16 Z' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23FFFFFF'/%3E%3C/svg%3E" />
+    <style>
+      /* ── Site loader ─────────────────────────────────── */
+      #site-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #FFF7F2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 2rem;
+        transition: opacity 0.45s ease, visibility 0.45s ease;
+      }
+      #site-loader.sl-exit {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      /* Lipstick wrapper — handles the entrance fade+rise */
+      .sl-lipstick-wrap {
+        animation: sl-appear 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      @keyframes sl-appear {
+        from { opacity: 0; transform: translateY(16px) scale(0.82); }
+        to   { opacity: 1; transform: translateY(0)   scale(1);    }
+      }
+
+      /* Lipstick inner — handles the continuous Y-axis spin */
+      .sl-lipstick-spin {
+        animation: sl-spin 1.9s 0.3s linear infinite;
+        transform-origin: center center;
+        transform-style: preserve-3d;
+      }
+      @keyframes sl-spin {
+        from { transform: perspective(220px) rotateY(0deg); }
+        to   { transform: perspective(220px) rotateY(360deg); }
+      }
+
+      /* Loading dots */
+      .sl-dots {
+        display: flex;
+        gap: 7px;
+        animation: sl-appear 0.55s 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      .sl-dots span {
+        display: block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #B76E79;
+        opacity: 0.25;
+        animation: sl-dot 1.2s 0.3s ease-in-out infinite;
+      }
+      .sl-dots span:nth-child(2) { animation-delay: 0.5s; }
+      .sl-dots span:nth-child(3) { animation-delay: 0.7s; }
+      @keyframes sl-dot {
+        0%, 100% { opacity: 0.22; transform: translateY(0); }
+        50%       { opacity: 0.9;  transform: translateY(-5px); }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading splash — removed by App.jsx on first mount -->
+    <div id="site-loader">
+      <div class="sl-lipstick-wrap">
+        <div class="sl-lipstick-spin">
+          <svg viewBox="0 0 48 155" width="52" height="169"
+               xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="ld-bullet" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%"   stop-color="#B06878"/>
+                <stop offset="55%"  stop-color="#D49098"/>
+                <stop offset="100%" stop-color="#C07880"/>
+              </linearGradient>
+              <linearGradient id="ld-body" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"   stop-color="#E8E2DE"/>
+                <stop offset="42%"  stop-color="#F6F2EF"/>
+                <stop offset="100%" stop-color="#E4DEDC"/>
+              </linearGradient>
+              <linearGradient id="ld-base" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"   stop-color="#8A9CB4"/>
+                <stop offset="100%" stop-color="#697A96"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Base cap -->
+            <rect x="3" y="120" width="42" height="31" rx="4" fill="url(#ld-base)"/>
+            <!-- Cap rim -->
+            <rect x="0"  y="115" width="48" height="8"  rx="3.5" fill="#9AACC2"/>
+            <rect x="3"  y="115" width="42" height="4"  rx="2"   fill="#BCC8D8" opacity="0.5"/>
+
+            <!-- Tube body -->
+            <rect x="6"  y="70"  width="36" height="48" rx="2.5" fill="url(#ld-body)"/>
+            <!-- Highlight strip -->
+            <rect x="9"  y="72"  width="8"  height="44" rx="2.5" fill="rgba(255,255,255,0.55)" opacity="0.68"/>
+            <!-- Shadow strip -->
+            <rect x="36" y="72"  width="5"  height="44" rx="2"   fill="rgba(0,0,0,0.04)"/>
+
+            <!-- Bullet -->
+            <path d="M6 70 L42 70 L40 54 Q34 26 24 22 Q14 26 8 54 Z"
+                  fill="url(#ld-bullet)"/>
+            <!-- Bullet highlight -->
+            <path d="M12 66 Q14 50 18 38"
+                  stroke="rgba(255,255,255,0.52)" stroke-width="2.5"
+                  fill="none" stroke-linecap="round"/>
+            <!-- Bullet tip shadow -->
+            <path d="M18 38 Q22 22 24 22 Q26 22 30 38 L27 42 Q24 33 21 33 Z"
+                  fill="#A05868" opacity="0.38"/>
+          </svg>
+        </div>
+      </div>
+      <div class="sl-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

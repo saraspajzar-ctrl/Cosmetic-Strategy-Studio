@@ -1,0 +1,178 @@
+{
+  "task": "classification",
+  "target": "High_Rating",
+  "threshold": 4.0,
+  "best_model": "XGBoost_Tuned",
+  "features": [
+    "Brand",
+    "Category",
+    "Usage_Frequency",
+    "Number_of_Reviews",
+    "Product_Size_ml",
+    "Review_Count_Log",
+    "Skin_Type",
+    "Gender_Target",
+    "Packaging_Type",
+    "Main_Ingredient",
+    "Cruelty_Free",
+    "Country_of_Origin"
+  ],
+  "metrics": {
+    "model": "XGBoost_Tuned",
+    "train_roc_auc": 0.9653,
+    "val_roc_auc": 0.5018,
+    "test_roc_auc": 0.5092,
+    "test_accuracy": 0.692,
+    "test_f1": 0.0894,
+    "test_precision": 0.2267,
+    "test_recall": 0.0556,
+    "cv_roc_mean": 0.5148,
+    "cv_roc_std": 0.0103,
+    "overfit_gap": 0.4635,
+    "best_params": {
+      "subsample": 1.0,
+      "n_estimators": 300,
+      "min_child_weight": 3,
+      "max_depth": 6,
+      "learning_rate": 0.15,
+      "colsample_bytree": 0.8
+    }
+  },
+  "feature_importances": [
+    {
+      "feature": "Category_Makeup Remover",
+      "importance": 0.014318
+    },
+    {
+      "feature": "Category_Highlighter",
+      "importance": 0.014179
+    },
+    {
+      "feature": "Country_of_Origin_USA",
+      "importance": 0.013099
+    },
+    {
+      "feature": "Main_Ingredient_Vitamin C",
+      "importance": 0.012757
+    },
+    {
+      "feature": "Main_Ingredient_Glycerin",
+      "importance": 0.012736
+    },
+    {
+      "feature": "Skin_Type_Combination",
+      "importance": 0.012666
+    },
+    {
+      "feature": "Main_Ingredient_Shea Butter",
+      "importance": 0.012591
+    },
+    {
+      "feature": "Country_of_Origin_France",
+      "importance": 0.012421
+    },
+    {
+      "feature": "Category_Powder",
+      "importance": 0.012405
+    },
+    {
+      "feature": "Packaging_Type_Spray",
+      "importance": 0.012374
+    },
+    {
+      "feature": "Country_of_Origin_Germany",
+      "importance": 0.012352
+    },
+    {
+      "feature": "Brand_Morphe",
+      "importance": 0.012324
+    },
+    {
+      "feature": "Country_of_Origin_Japan",
+      "importance": 0.012301
+    },
+    {
+      "feature": "Skin_Type_Sensitive",
+      "importance": 0.012272
+    },
+    {
+      "feature": "Main_Ingredient_Retinol",
+      "importance": 0.012231
+    },
+    {
+      "feature": "Category_Blush",
+      "importance": 0.012049
+    },
+    {
+      "feature": "Packaging_Type_Jar",
+      "importance": 0.012043
+    },
+    {
+      "feature": "Brand_Ilia Beauty",
+      "importance": 0.011999
+    },
+    {
+      "feature": "Packaging_Type_Tube",
+      "importance": 0.011985
+    },
+    {
+      "feature": "Skin_Type_Oily",
+      "importance": 0.011953
+    }
+  ],
+  "learning_curve": {
+    "train_sizes": [
+      839,
+      1919,
+      2999,
+      4079,
+      5159,
+      6239,
+      7319,
+      8399
+    ],
+    "train_mean": [
+      0.9999929182594134,
+      0.9981387514405041,
+      0.9941219538907429,
+      0.9914936786198739,
+      0.9881434359812209,
+      0.9846000386659071,
+      0.9778464994067086,
+      0.9730392260993558
+    ],
+    "val_mean": [
+      0.5072872130480257,
+      0.5102900024920342,
+      0.5132232855265417,
+      0.5085820580019422,
+      0.5116099479482674,
+      0.5056997892187093,
+      0.5170608697124021,
+      0.5148103986371726
+    ],
+    "train_std": [
+      1.0886750189343918e-05,
+      0.00051946394671604,
+      0.0004607662054216299,
+      0.0010433423098708617,
+      0.0017303697275357452,
+      0.0010666698316019073,
+      0.0018042239093765716,
+      0.0023840521557775248
+    ],
+    "val_std": [
+      0.012670806648916328,
+      0.01259374682234042,
+      0.009713283387139065,
+      0.015662773163447313,
+      0.017842187719749686,
+      0.021427667661095568,
+      0.01958752998242484,
+      0.010290800946919813
+    ]
+  },
+  "train_size": 10499,
+  "val_size": 2251,
+  "test_size": 2250
+}

@@ -1,0 +1,161 @@
+---
+title: "Beauty Product Intelligence App"
+subtitle: "Predicting cosmetics prices and ratings with machine learning"
+author: "MADA Project"
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    transition: slide
+    footer: "MADA — Beauty Product Intelligence App"
+    logo: ""
+execute:
+  echo: false
+  warning: false
+---
+
+## The Problem {.center}
+
+A cosmetics brand is planning a new product.
+
+**Two hard questions:**
+
+> *What price should we charge?*
+> *Will consumers actually rate it well?*
+
+Brand managers currently rely on intuition and competitor benchmarking.
+Can machine learning do better?
+
+---
+
+## The Dataset
+
+::: {.incremental}
+- **Source**: "Most Used Beauty & Cosmetics Products (Extended)" — Kaggle public dataset
+- **Size**: 15,000 products × 14 columns
+- **Features**: Brand, Category, Usage Frequency, Product Size, Skin Type, Gender Target, Packaging, Main Ingredient, Cruelty-Free status, Country of Origin
+- **Targets**: Rating (1–5 stars), Price in USD ($10–$150)
+:::
+
+---
+
+## Why It Matters
+
+::: columns
+::: {.column width="50%"}
+**For brand managers:**
+
+- Reduces time-to-decision for new product launches
+- Provides data-backed pricing range estimates
+- Flags products likely to under-perform on ratings
+:::
+::: {.column width="50%"}
+**Broader value:**
+
+- Applicable to any SKU-level product dataset
+- The ML pipeline generalises to new data
+- Live web app — no data science expertise needed to use
+:::
+:::
+
+---
+
+## Classification Question
+
+**Can we predict if a product will be highly rated?**
+
+- Target: `High_Rating = 1` if `Rating ≥ 4.0`, else `0`
+- Class split: 27.1% high-rated, 72.9% not high-rated
+- **Critical design rule**: Rating is **NOT** used as a feature — that would be data leakage
+- Input features: Brand, Category, Ingredient, Size, Packaging, Cruelty-Free, etc.
+
+---
+
+## Regression Question
+
+**Can we predict the retail price?**
+
+- Target: `Price_USD`
+- **Main model**: no Rating feature (realistic for a new product before launch)
+- **Alternative model**: includes Rating (for benchmarking only)
+- Price range in data: $10–$150, mean $80
+
+---
+
+## Modelling Approach
+
+**Two leakage-safe scikit-learn Pipelines:**
+
+| Step | Classification | Regression |
+|------|----------------|------------|
+| Preprocessing | Imputer + OHE + Scaler | Imputer + OHE + Scaler |
+| Baseline | DummyClassifier | DummyRegressor |
+| Linear | LogisticRegression | Ridge |
+| Tree | DecisionTree | DecisionTree |
+| Ensemble | RandomForest | RandomForest |
+| Boosting | **XGBoost** | **XGBoost** |
+
+---
+
+## Key Findings
+
+::: {.callout-warning}
+## The honest result
+
+The dataset is **synthetically generated** — all numeric variables have near-zero correlations (< 0.01). No ML model can learn from random data.
+:::
+
+| Task | Best Model | Metric | Baseline |
+|------|------------|--------|----------|
+| Classification | LogisticRegression | ROC-AUC 0.526 | 0.500 |
+| Regression | Ridge | R² −0.006 | R² 0.000 |
+
+---
+
+## What the App Does
+
+1. User enters a planned product configuration
+2. Backend returns:
+   - **Predicted price** ($USD) and price segment
+   - **High-rating probability** (0–100%)
+   - **Strategic recommendation** in plain language
+3. Dashboard shows dataset stats and model leaderboard
+
+**Tech stack**: React + Vite (frontend) · FastAPI (backend) · scikit-learn + XGBoost (models)
+
+---
+
+## Business Recommendations
+
+::: {.incremental}
+1. **Replace the dataset** — use scraped pricing data from Sephora, Ulta, or ASOS combined with verified consumer reviews.
+2. **Add brand tier feature** — luxury vs. masstige vs. drugstore is the strongest pricing signal.
+3. **Include sell-through rate** — products with high conversion rates tend to get more (and better) reviews.
+4. **The architecture is reusable** — same pipeline, better data, actionable results.
+:::
+
+---
+
+## Limitations & Next Steps
+
+**Limitations:**
+- Dataset is synthetic — findings do not represent real market dynamics
+- Brand and marketing reputation are not captured in product attributes
+- Correlation is not causation
+
+**Next steps:**
+- Acquire real pricing and review data
+- Add brand tier and distribution channel features
+- Explore NLP on ingredient lists for richer features
+- Add SHAP explanations for model interpretability
+
+---
+
+## Thank You {.center}
+
+**Beauty Product Intelligence App**
+
+A complete end-to-end ML project:
+data → cleaning → feature engineering → model ladder → API → web app
+
+*The pipeline is production-ready. The next step is better data.*
