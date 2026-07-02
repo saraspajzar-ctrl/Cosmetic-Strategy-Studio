@@ -102,9 +102,9 @@ export default function ModelPerformanceTab({ leaderboard, metadata }) {
       <div className="card" style={{ marginBottom: '1.5rem' }}>
         <h3 style={{ marginBottom: '0.5rem', fontSize: '0.95rem', fontWeight: 700 }}>Model Leaderboard</h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '1rem', lineHeight: 1.5 }}>
-          * marks the best-performing non-baseline model per task.
+          * marks the selected model based on cross-validation performance.
+          The test metrics show final out-of-sample performance and may differ from the CV ranking.
           Overfit gap = train score minus test score (lower is better).
-          CV = 5-fold cross-validation on the training set.
         </p>
         <LeaderboardTable leaderboard={leaderboard} />
       </div>
