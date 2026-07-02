@@ -148,12 +148,21 @@ function CategoryRankedChart({ data, dataKey, color, valueFormatter, tickFormatt
   )
 }
 
-export default function CommercialInsightsTab({ summary, metadata }) {
+export default function CommercialInsightsTab({ summary, metadata, error, onRetry }) {
   if (!summary && !metadata) {
     return (
       <div>
         <div className="tab-header"><h2>Commercial Insights</h2></div>
-        <div className="card"><p style={{ color: 'var(--text-muted)' }}>Loading dataset insights…</p></div>
+        <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          {error ? (
+            <>
+              <p style={{ color: 'var(--text-muted)', margin: 0 }}>Model performance data is temporarily unavailable. Please retry.</p>
+              <button onClick={onRetry} style={{ flexShrink: 0, padding: '0.3rem 0.875rem', borderRadius: '6px', border: '1.5px solid var(--accent)', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: '0.8rem', color: 'var(--accent)' }}>Retry</button>
+            </>
+          ) : (
+            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Loading dataset insights…</p>
+          )}
+        </div>
       </div>
     )
   }

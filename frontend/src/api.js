@@ -15,11 +15,22 @@ async function request(method, path, body = null) {
   return res.json()
 }
 
+async function fetchStatic(path) {
+  const res = await fetch(path)
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
 export const api = {
-  health:      ()       => request('GET',  '/health'),
-  summary:     ()       => request('GET',  '/data/summary'),
-  leaderboard: ()       => request('GET',  '/models/leaderboard'),
-  metadata:    ()       => request('GET',  '/metadata'),
+  // Health — backend only
+  health: () => request('GET', '/health'),
+
+  // Static data — served from /public/data/, never hits Render
+  summary:     () => fetchStatic('/data/data_summary.json'),
+  leaderboard: () => fetchStatic('/data/leaderboard.json'),
+  metadata:    () => fetchStatic('/data/metadata.json'),
+
+  // Dynamic predictions — backend only
   predictRating:     (product) => request('POST', '/predict/rating', product),
   predictPrice:      (product) => request('POST', '/predict/price', product),
   predictBoth:       (product) => request('POST', '/predict/both', product),

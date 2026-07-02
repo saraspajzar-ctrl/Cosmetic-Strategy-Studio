@@ -23,9 +23,9 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState(null)
   const [metadata, setMetadata]       = useState(null)
   const [apiStatus, setApiStatus]     = useState(null)
+  const [staticError, setStaticError] = useState(false)
 
   useEffect(() => {
-    // Dismiss the HTML loader splash after first React paint
     const loader = document.getElementById('site-loader')
     if (loader) {
       loader.classList.add('sl-exit')
@@ -33,12 +33,17 @@ export default function App() {
     }
   }, [])
 
-  useEffect(() => {
+  function loadStaticData() {
+    setStaticError(false)
+    Promise.all([
+      api.summary().then(setSummary),
+      api.leaderboard().then(setLeaderboard),
+      api.metadata().then(setMetadata),
+    ]).catch(() => setStaticError(true))
     api.health().then(setApiStatus).catch(() => setApiStatus({ status: 'unreachable' }))
-    api.summary().then(setSummary).catch(() => {})
-    api.leaderboard().then(setLeaderboard).catch(() => {})
-    api.metadata().then(setMetadata).catch(() => {})
-  }, [])
+  }
+
+  useEffect(() => { loadStaticData() }, [])
 
   return (
     <div className="app">
@@ -62,9 +67,9 @@ export default function App() {
         {activeTab === 'welcome'     && <WelcomeTab summary={summary} onNavigate={setActiveTab} />}
         {activeTab === 'success'     && <ProductSuccessTab />}
         {activeTab === 'price'       && <PricePredictorTab />}
-        {activeTab === 'insights'    && <CommercialInsightsTab summary={summary} metadata={metadata} />}
+        {activeTab === 'insights'    && <CommercialInsightsTab summary={summary} metadata={metadata} error={staticError} onRetry={loadStaticData} />}
         {activeTab === 'portfolio'   && <PortfolioOptimizerTab />}
-        {activeTab === 'performance' && <ModelPerformanceTab leaderboard={leaderboard} metadata={metadata} />}
+        {activeTab === 'performance' && <ModelPerformanceTab leaderboard={leaderboard} metadata={metadata} error={staticError} onRetry={loadStaticData} />}
       </main>
 
     </div>

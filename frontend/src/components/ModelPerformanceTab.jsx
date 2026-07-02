@@ -85,7 +85,7 @@ function GlobalDrivers({ metadata }) {
   )
 }
 
-export default function ModelPerformanceTab({ leaderboard, metadata }) {
+export default function ModelPerformanceTab({ leaderboard, metadata, error, onRetry }) {
   return (
     <div>
       <div className="tab-header">
@@ -96,6 +96,13 @@ export default function ModelPerformanceTab({ leaderboard, metadata }) {
           using held-out test data and 5-fold cross-validation.
         </p>
       </div>
+
+      {error && (
+        <div className="error-box" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <span>Model performance data is temporarily unavailable. Please retry.</span>
+          <button onClick={onRetry} style={{ flexShrink: 0, padding: '0.3rem 0.875rem', borderRadius: '6px', border: '1.5px solid currentColor', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: '0.8rem', color: 'var(--accent)' }}>Retry</button>
+        </div>
+      )}
 
       <GlobalDrivers metadata={metadata} />
 

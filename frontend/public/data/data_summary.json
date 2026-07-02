@@ -1,0 +1,280 @@
+{
+  "n_rows": 15000,
+  "n_cols": 19,
+  "columns": [
+    "Product_Name",
+    "Brand",
+    "Category",
+    "Usage_Frequency",
+    "Price_USD",
+    "Rating",
+    "Number_of_Reviews",
+    "Product_Size",
+    "Skin_Type",
+    "Gender_Target",
+    "Packaging_Type",
+    "Main_Ingredient",
+    "Cruelty_Free",
+    "Country_of_Origin",
+    "Product_Size_ml",
+    "Review_Count_Log",
+    "High_Rating",
+    "Price_Segment",
+    "Value_Score"
+  ],
+  "missing_values": {
+    "Product_Name": 0,
+    "Brand": 0,
+    "Category": 0,
+    "Usage_Frequency": 0,
+    "Price_USD": 0,
+    "Rating": 0,
+    "Number_of_Reviews": 0,
+    "Product_Size": 0,
+    "Skin_Type": 0,
+    "Gender_Target": 0,
+    "Packaging_Type": 0,
+    "Main_Ingredient": 0,
+    "Cruelty_Free": 0,
+    "Country_of_Origin": 0,
+    "Product_Size_ml": 0,
+    "Review_Count_Log": 0,
+    "High_Rating": 0,
+    "Price_Segment": 0,
+    "Value_Score": 0
+  },
+  "numeric_stats": {
+    "Price_USD": {
+      "mean": 80.13,
+      "std": 40.4,
+      "min": 10.0,
+      "max": 149.99,
+      "median": 80.04
+    },
+    "Rating": {
+      "mean": 3.0,
+      "std": 1.17,
+      "min": 1.0,
+      "max": 5.0,
+      "median": 3.0
+    },
+    "Number_of_Reviews": {
+      "mean": 5014.23,
+      "std": 2855.67,
+      "min": 52.0,
+      "max": 10000.0,
+      "median": 5002.0
+    }
+  },
+  "category_counts": {
+    "Category": {
+      "Serum": 710,
+      "Mascara": 674,
+      "Face Oil": 671,
+      "Highlighter": 653,
+      "Face Mask": 653,
+      "Moisturizer": 638,
+      "Makeup Remover": 636,
+      "Concealer": 633,
+      "Lipstick": 633,
+      "Bronzer": 631,
+      "Eyeliner": 629,
+      "Blush": 628,
+      "Setting Spray": 622,
+      "Cleanser": 614,
+      "Foundation": 613,
+      "BB Cream": 613,
+      "Lip Liner": 610,
+      "Primer": 606,
+      "Contour": 604,
+      "Powder": 599
+    },
+    "Brand": {
+      "Milk Makeup": 426,
+      "Make Up For Ever": 414,
+      "Kiehl\u2019s": 411,
+      "NARS": 400,
+      "E.l.f.": 399,
+      "Farsali": 399,
+      "Yves Saint Laurent": 394,
+      "Sisley": 392,
+      "Bite Beauty": 392,
+      "Morphe": 392,
+      "KVD Beauty": 391,
+      "Glossier": 388,
+      "Becca": 388,
+      "Huda Beauty": 384,
+      "RMS Beauty": 382,
+      "Bobby Brown": 380,
+      "Ilia Beauty": 379,
+      "Clinique": 377,
+      "Rare Beauty": 375,
+      "Tatcha": 374
+    },
+    "Skin_Type": {
+      "Combination": 3060,
+      "Oily": 3009,
+      "Normal": 2991,
+      "Sensitive": 2975,
+      "Dry": 2965
+    },
+    "Gender_Target": {
+      "Male": 5017,
+      "Female": 5002,
+      "Unisex": 4981
+    },
+    "Packaging_Type": {
+      "Jar": 2567,
+      "Bottle": 2532,
+      "Stick": 2529,
+      "Spray": 2528,
+      "Compact": 2454,
+      "Tube": 2390
+    },
+    "Cruelty_Free": {
+      "False": 7592,
+      "True": 7408
+    },
+    "Country_of_Origin": {
+      "Italy": 1942,
+      "USA": 1931,
+      "Australia": 1873,
+      "France": 1863,
+      "Japan": 1861,
+      "South Korea": 1851,
+      "UK": 1846,
+      "Germany": 1833
+    }
+  },
+  "high_rating_distribution": {
+    "high_rated_count": 4070,
+    "not_high_rated_count": 10930,
+    "high_rated_pct": 27.1
+  },
+  "price_segment_distribution": {
+    "Premium": 5398,
+    "Mid-range": 5305,
+    "Budget": 4297
+  },
+  "category_averages": {
+    "BB Cream": {
+      "Price_USD": 78.91,
+      "Rating": 3.06
+    },
+    "Blush": {
+      "Price_USD": 82.29,
+      "Rating": 2.98
+    },
+    "Bronzer": {
+      "Price_USD": 81.36,
+      "Rating": 2.98
+    },
+    "CC Cream": {
+      "Price_USD": 79.43,
+      "Rating": 3.07
+    },
+    "Cleanser": {
+      "Price_USD": 79.0,
+      "Rating": 3.01
+    },
+    "Concealer": {
+      "Price_USD": 78.79,
+      "Rating": 3.0
+    },
+    "Contour": {
+      "Price_USD": 79.16,
+      "Rating": 3.13
+    },
+    "Exfoliator": {
+      "Price_USD": 83.01,
+      "Rating": 3.05
+    },
+    "Eye Shadow": {
+      "Price_USD": 81.66,
+      "Rating": 2.95
+    },
+    "Eyeliner": {
+      "Price_USD": 75.72,
+      "Rating": 2.91
+    },
+    "Face Mask": {
+      "Price_USD": 81.51,
+      "Rating": 3.02
+    },
+    "Face Oil": {
+      "Price_USD": 79.51,
+      "Rating": 2.97
+    },
+    "Foundation": {
+      "Price_USD": 80.92,
+      "Rating": 3.01
+    },
+    "Highlighter": {
+      "Price_USD": 81.43,
+      "Rating": 3.03
+    },
+    "Lip Gloss": {
+      "Price_USD": 80.54,
+      "Rating": 2.95
+    },
+    "Lip Liner": {
+      "Price_USD": 79.93,
+      "Rating": 2.89
+    },
+    "Lipstick": {
+      "Price_USD": 81.11,
+      "Rating": 2.92
+    },
+    "Makeup Remover": {
+      "Price_USD": 81.81,
+      "Rating": 3.0
+    },
+    "Mascara": {
+      "Price_USD": 79.83,
+      "Rating": 3.01
+    },
+    "Moisturizer": {
+      "Price_USD": 81.58,
+      "Rating": 3.08
+    },
+    "Powder": {
+      "Price_USD": 78.66,
+      "Rating": 2.99
+    },
+    "Primer": {
+      "Price_USD": 80.11,
+      "Rating": 3.04
+    },
+    "Serum": {
+      "Price_USD": 77.41,
+      "Rating": 2.97
+    },
+    "Setting Spray": {
+      "Price_USD": 79.98,
+      "Rating": 3.05
+    }
+  },
+  "rating_distribution": {
+    "1": 1687,
+    "2": 4139,
+    "3": 3347,
+    "4": 4043,
+    "5": 1784
+  },
+  "country_avg_price": {
+    "Australia": 80.74,
+    "France": 79.24,
+    "Germany": 80.34,
+    "Italy": 79.93,
+    "Japan": 78.77,
+    "South Korea": 82.4,
+    "UK": 79.16,
+    "USA": 80.5
+  },
+  "cruelty_free_avg_rating": {
+    "False": 2.999,
+    "True": 3.006
+  },
+  "n_brands": 40,
+  "n_categories": 24
+}
