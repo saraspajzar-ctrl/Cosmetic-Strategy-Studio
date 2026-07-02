@@ -65,13 +65,6 @@ export default function ProductConceptPreview({ form }) {
         </div>
       </div>
 
-      <p style={{
-        marginTop: '0.75rem', marginBottom: 0,
-        fontSize: '0.7rem', color: 'var(--text-muted)',
-        fontStyle: 'italic', lineHeight: 1.45,
-      }}>
-        Visuals are category illustrations, not exact product photos.
-      </p>
     </div>
   )
 }
